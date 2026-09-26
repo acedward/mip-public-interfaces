@@ -26,8 +26,35 @@ v0.4.0-alpha.3 wherever it has a module.
 Everything here is **in development** and is exercised on a local Midnight 2.x chain;
 nothing is deployed to a public network yet.
 
-Status: **scaffold** — the contract sets arrive on the
-`feat/00024-02-public-interface` branch.
+Status: **in development** (branch `feat/00024-02-public-interface`).
+
+## Layout
+
+```
+contracts/TokenMetadata.compact      MIP-0018 module (UC-1 layout, emitter secret) — vendored, see contracts/SOURCE.md
+contracts/OffChainInterface.compact  [B]'s publishBundle module — vendored, see contracts/SOURCE.md
+scripts/                             generator, compile, deploy, bundle and fixture scripts
+deployments/                         the contract matrix and public deployment records
+fixtures/                            test inputs exported for the token indexer
+test/                                this repository's tests (vitest)
+```
+
+## Toolchain
+
+| Piece | Version |
+|---|---|
+| Compact compiler | `compactc` 0.34.0 (`compact compile +0.34.0`; language 0.26.0, runtime 0.19.0) |
+| `@midnight-ntwrk/compact-runtime` | 0.19.0 |
+| `@midnightntwrk/ledger-v9` | 1.0.0-rc.5 — pinned as a dependency **and** in `overrides`, so exactly one copy is installed |
+| `@midnightntwrk/onchain-runtime-v4` | 4.0.0-rc.3 |
+| `@openzeppelin/compact-contracts` | 0.4.0-alpha.3 |
+| Node / npm | Node 24.21 with npm 11.19 (e.g. `node:24-bookworm-slim`); older npm 11 releases can crash on `overrides` |
+
+```sh
+npm ci
+npm run typecheck
+npm test          # includes the one-copy check of the pinned runtime packages
+```
 
 ## License
 
