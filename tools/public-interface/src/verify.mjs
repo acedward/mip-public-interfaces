@@ -38,9 +38,12 @@
 // compile that printed no trace line it recognises. It uses the installed
 // compiler; a version other than the one package.json pins is only reported.
 //
-// The commitment and URL come from the contract's newest public-interface event
-// (the `Misc` event publishBundle emits; the README's Spec defines it), read from
-// an indexer, or from an event payload supplied directly.
+// The commitment and URL come from the contract's newest public-interface
+// publication, read from an indexer, or from an event payload supplied directly.
+// A publication is a Multi-Part Event package: the `Misc` events publishBundle
+// emits in one intent of one transaction, merged in emission order into one
+// 256·k-byte payload (src/indexer.mjs; patch UC-2 of project 00024 — upstream took
+// the last individual 256-byte event).
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, statSync } from 'node:fs';
@@ -50,7 +53,7 @@ import { pathToFileURL } from 'node:url';
 import * as rt from '@midnight-ntwrk/compact-runtime';
 import { INDEX_FILE, compilerOf, compilerText, indexCommitment, parsePayload, sameCompiler } from './hash.mjs';
 import { Budget, BundleError, MAX_BUNDLE_BYTES, materialize, readIndex } from './fetch.mjs';
-import { fetchLatestBundleEvent, fetchState } from './indexer.mjs';
+import { fetchLatestBundlePublication, fetchState } from './indexer.mjs';
 import { asciiJson, printable } from './escape.mjs';
 import { ArgumentError, CircuitAssertionError, bundleInfo, executeInChild, uintTypeName } from './execute.mjs';
 
@@ -474,14 +477,16 @@ export function levelThree(bundleDir, { compactBin = process.env.COMPACT_BIN || 
 /**
  * Run the checks and, if a circuit is named, the read.
  *
- * Chain inputs are either `{ indexerUrl, address }` or `{ eventPayload, stateBytes }`.
+ * Chain inputs are either `{ indexerUrl, address }` or `{ eventPayload, stateBytes }`;
+ * with an indexer, `sourceOf(raw)` may replace the ledger decoder that reads each
+ * event's transaction and intent from its raw bytes (src/indexer.mjs).
  * The bundle is `bundleDir` (a local copy with its index.json), `bundleUrl` (the
  * URL of an index.json), or, with neither, the URL the event carries.
  * Returns a structured result; never throws for a failed check, only for a
  * malformed request. The private directory Level 1 fills is removed before
  * returning.
  */
-export async function verify({ bundleDir, bundleUrl, indexerUrl, address, eventPayload, stateBytes, circuit, args = [], level = 2, compactBin, tmpRoot, maxBytes }) {
+export async function verify({ bundleDir, bundleUrl, indexerUrl, address, eventPayload, stateBytes, circuit, args = [], level = 2, compactBin, tmpRoot, maxBytes, sourceOf }) {
   if (!LEVELS.includes(level)) throw new Error(`level ${LEVEL_ERROR}, got ${JSON.stringify(level)}`);
   if (circuit !== undefined && circuit !== null && (typeof circuit !== 'string' || circuit === '')) {
     throw new Error(`circuit must be a circuit name, got ${JSON.stringify(circuit)}`);
@@ -491,14 +496,16 @@ export async function verify({ bundleDir, bundleUrl, indexerUrl, address, eventP
 
   if (indexerUrl) {
     if (!address) throw new Error('--indexer needs --address');
-    const event = await fetchLatestBundleEvent(indexerUrl, address);
+    const event = await fetchLatestBundlePublication(indexerUrl, address, { sourceOf });
     if (!event) throw new Error(`contract ${address} has emitted no public-interface event: no published interface`);
     const st = await fetchState(indexerUrl, address);
     eventPayload = event.payload;
     stateBytes = st.state;
     result.source = {
       from: 'indexer', indexerUrl, address,
-      eventId: event.id, supersededIds: event.supersededIds,
+      eventId: event.id, partIds: event.partIds, parts: event.parts, segment: event.segment,
+      eventTxHash: event.txHash, eventBlockHeight: event.blockHeight,
+      supersededIds: event.supersededIds,
       blockHeight: st.blockHeight, txHash: st.txHash,
     };
   } else {
@@ -506,8 +513,8 @@ export async function verify({ bundleDir, bundleUrl, indexerUrl, address, eventP
     result.source = { from: 'files' };
   }
 
-  const { commitment, url } = parsePayload(eventPayload);
-  result.event = { url, commitment: Buffer.from(commitment).toString('hex') };
+  const { commitment, url, parts } = parsePayload(eventPayload);
+  result.event = { url, commitment: Buffer.from(commitment).toString('hex'), parts };
   result.bundle = bundleDir
     ? { from: 'dir', location: resolve(bundleDir) }
     : { from: bundleUrl ? 'url' : 'event url', location: bundleUrl ?? url };
@@ -575,7 +582,8 @@ const USAGE = `coc-verify — execute a published contract read circuit and chec
   --indexer <url>         indexer GraphQL endpoint, e.g. https://host/api/v4/graphql;
                           the contract's newest public-interface event is used
   --address <hex>         contract address
-  --event-payload <hex>   the event's 256-byte payload, instead of --indexer
+  --event-payload <hex>   the publication's payload, instead of --indexer: 256 bytes, or
+                          256·k for a multi-part package (every part, in order)
   --state <hex|file>      serialized contract state, instead of --indexer
   --circuit <name>        circuit to execute, in a child process (omit to only verify)
   --args <...>            arguments for it, one CLI token each: Bytes<N> as exactly
@@ -748,12 +756,14 @@ export function printReport(r) {
   if (r.source.from === 'indexer') {
     console.log(`indexer     : ${p(r.source.indexerUrl)}`);
     console.log(`contract    : ${p(r.source.address)}`);
-    console.log(`event       : id ${p(r.source.eventId)}${r.source.supersededIds?.length ? ` (supersedes ${r.source.supersededIds.map(p).join(', ')})` : ''}`);
+    const where = r.source.parts === undefined ? ''
+      : ` — ${p(r.source.parts)} part${r.source.parts === 1 ? '' : 's'} (event ids ${(r.source.partIds ?? []).map(p).join(', ')}) in intent ${p(r.source.segment)} of tx ${p(r.source.eventTxHash)}, block ${p(r.source.eventBlockHeight)}`;
+    console.log(`event       : id ${p(r.source.eventId)}${where}${r.source.supersededIds?.length ? ` (supersedes ${r.source.supersededIds.map(p).join(', ')})` : ''}`);
     console.log(`state       : block ${p(r.source.blockHeight)}, tx ${p(r.source.txHash)}`);
   } else {
     console.log('input       : event payload and state supplied directly (no indexer)');
   }
-  console.log(`event url   : ${p(r.event.url)}`);
+  console.log(`event url   : ${p(r.event.url)}${r.event.parts > 1 ? ` (${p(r.event.parts)}-part payload)` : ''}`);
   console.log(`commitment  : ${p(r.event.commitment)}`);
   const from = { 'event url': ' (from the event)', dir: ' (local copy)' }[r.bundle.from] ?? '';
   console.log(`bundle      : ${p(r.bundle.location)}${from}`);

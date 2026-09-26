@@ -10,8 +10,10 @@
 //      a locally built state has the entry point names but no keys, so without
 //      this step Level 2 has nothing to compare against,
 //   3. mint some test data through the contract's own circuits,
-//   4. call `publishBundle(payload)` and read the emitted event back, where the
-//      payload is the commitment of the bundle's index.json ++ the index URL.
+//   4. call `publishBundle(part)` once per 256-byte part of the payload and read
+//      each emitted event back, where the payload is the commitment of the
+//      bundle's index.json ++ the index URL, zero padded to 256·k bytes (one part
+//      unless the URL is longer than 224 bytes; patch UC-2 of project 00024).
 //
 // No proof is produced at any point; this is the same local execution path the
 // consumer tool uses, with writes kept instead of discarded.
@@ -21,7 +23,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import * as rt from '@midnight-ntwrk/compact-runtime';
 import { EXAMPLES } from '../src/bundle.mjs';
 import { PUBLIC_INTERFACE_EVENT_HEX } from '../src/event.mjs';
-import { assemblePayload, indexCommitment, indexUrlFor, readIndexFile } from '../src/hash.mjs';
+import { assemblePayload, indexCommitment, indexUrlFor, payloadParts, readIndexFile } from '../src/hash.mjs';
 
 const REPO = dirname(dirname(fileURLToPath(import.meta.url)));
 const COIN_PK = '0'.repeat(64);
@@ -107,35 +109,45 @@ export async function deploySimulated(example, { repo = REPO, initialized = true
 }
 
 /**
- * Deploy-simulate, emit the public-interface event, and return the two consumer
+ * Deploy-simulate, emit the public-interface event(s), and return the two consumer
  * inputs. The commitment is taken from the bundle's own index.json, exactly what
  * the deployer uploads; `url` gets index.json appended if it ends in `/`, as
- * deploy-check does. The event's name is asserted to be exactly the
- * public-interface event name, zero padded, and `payload` against the payload
- * read back out of the emitted event.
+ * deploy-check does. Each part is one `publishBundle` call; every event's name is
+ * asserted to be exactly the public-interface event name, zero padded, and
+ * `payload` against the parts read back out of the emitted events, in order.
  */
 export async function simulate(example, { bundleDir, url: requestedUrl, repo = REPO, initialized = true } = {}) {
   const { state, callCircuit, operations } = await deploySimulated(example, { repo, initialized });
   const url = indexUrlFor(requestedUrl);
   const commitment = indexCommitment(readIndexFile(bundleDir));
   const payload = assemblePayload(commitment, url);
-  const r = await callCircuit('publishBundle', Uint8Array.from(payload));
-
-  const logged = r.context.events?.[0];
-  if (!logged) throw new Error('publishBundle produced no event');
-  // One `Bytes<288>` atom: the 32-byte name followed by the 256-byte payload,
-  // with trailing zero bytes stripped by the runtime.
-  const raw = Buffer.concat([Buffer.from(logged.data.content.value[0]), Buffer.alloc(288)]).subarray(0, 288);
-  const eventNameBytes = raw.subarray(0, 32);
+  const emitted = [];
+  let first;
+  for (const part of payloadParts(payload)) {
+    const r = await callCircuit('publishBundle', Uint8Array.from(part));
+    const logged = r.context.events?.[0];
+    if (!logged) throw new Error('publishBundle produced no event');
+    first ??= logged;
+    // One `Bytes<288>` atom: the 32-byte name followed by the 256-byte part,
+    // with trailing zero bytes stripped by the runtime.
+    const raw = Buffer.concat([Buffer.from(logged.data.content.value[0]), Buffer.alloc(288)]).subarray(0, 288);
+    const nameBytes = raw.subarray(0, 32);
+    if (nameBytes.toString('hex') !== PUBLIC_INTERFACE_EVENT_HEX) {
+      throw new Error(`publishBundle emitted an event named ${JSON.stringify(nameBytes.toString('utf8').replace(/\0+$/, ''))}, not the public-interface event`);
+    }
+    emitted.push({ nameBytes, part: raw.subarray(32) });
+  }
+  const eventNameBytes = emitted[0].nameBytes;
   const eventName = eventNameBytes.toString('utf8').replace(/\0+$/, '');
-  const eventPayload = raw.subarray(32);
-  if (eventNameBytes.toString('hex') !== PUBLIC_INTERFACE_EVENT_HEX) throw new Error(`publishBundle emitted an event named ${JSON.stringify(eventName)}, not the public-interface event`);
+  // The package a reader merges: every part, whole, in emission order.
+  const eventPayload = Buffer.concat(emitted.map((e) => e.part));
   if (!eventPayload.equals(payload)) throw new Error('the emitted payload is not the payload passed in');
 
   return {
     example, url, commitment, payload, eventName, eventNameBytes, eventPayload, operations,
-    eventType: logged.eventType,
-    eventAtomBytes: logged.data?.content?.alignment?.[0]?.value?.length,
+    parts: emitted.length,
+    eventType: first.eventType,
+    eventAtomBytes: first.data?.content?.alignment?.[0]?.value?.length,
     state: Buffer.from(state.serialize()),
   };
 }

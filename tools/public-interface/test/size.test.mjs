@@ -43,7 +43,7 @@ describe.skipIf(!isBuilt())(`footprint (${isBuilt() ? 'built' : BUILD_HINT})`, (
     expect(sim.eventPayload).toHaveLength(256);
   });
 
-  it('a final URL of exactly 224 bytes is accepted and 225 is refused, counting an appended index.json', () => {
+  it('a final URL of exactly 224 bytes is one part and 225 takes two, counting an appended index.json (UC-2)', () => {
     const base = 'https://example.invalid/';
     const named = (n) => base + 'a'.repeat(n - base.length - '/index.json'.length) + '/index.json';
     const slashed = (n) => base + 'a'.repeat(n - base.length - 1) + '/';     // n bytes before index.json is appended
@@ -55,10 +55,17 @@ describe.skipIf(!isBuilt())(`footprint (${isBuilt() ? 'built' : BUILD_HINT})`, (
     const ok = build(named(224), 'url224');
     expect(ok.payload).toHaveLength(256);
     expect(ok.url).toBe(named(224));
-    expect(() => build(named(225), 'url225')).toThrow(/225 bytes.*room for 224/);
-    // A directory URL: 214 bytes + "index.json" = 224 is accepted, 215 + 10 = 225 is not.
+    expect(ok.parts).toHaveLength(1);
+    // Upstream refused 225 bytes; under the Multi-Part Event opt-in the pointer takes two parts.
+    const two = build(named(225), 'url225');
+    expect(two.payload).toHaveLength(512);
+    expect(two.parts).toHaveLength(2);
+    // A directory URL: 214 bytes + "index.json" = 224 is one part, 215 + 10 = 225 two.
     expect(build(slashed(214), 'dir214').url).toHaveLength(224);
-    expect(() => build(slashed(215), 'dir215')).toThrow(/with index\.json appended\) is 225 bytes/);
+    expect(build(slashed(214), 'dir214b').parts).toHaveLength(1);
+    const dir = build(slashed(215), 'dir215');
+    expect(dir.url).toHaveLength(225);
+    expect(dir.parts).toHaveLength(2);
   });
 
   it('no bundle ships a prover key or zkir', () => {

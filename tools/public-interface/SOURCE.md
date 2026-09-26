@@ -26,7 +26,24 @@ this repository, so `git log -- tools/public-interface` lists them:
 | copy (`00024-02-A3a`) | not copied: `MIP-SPEC-DRAFT.md` (the draft's normative text — cite upstream, do not fork it) and `deploy-tools/package.json` + `deploy-tools/package-lock.json` (the live example's Stagenet deployer; never installed or run here — the tests use only its no-dependency, no-network paths — and its lock pins a second `ledger-v9`, 1.0.0-rc.3). `package.json` gains the bin aliases `public-interface-verify` and `public-interface-deploy-check` beside `coc-verify` / `coc-deploy-check` (same files) | UC-6 |
 | test-only (`00024-02-A3a2`) | `test/readme.test.mjs`: two expectations follow PR #6's rewritten README (upstream drift, both fail on the pinned commit); `package.json`: devDependency `@scure/bip39` 2.0.1 (deploy-tools' own pin) so Vite resolves `deploy-tools/profile.mjs`'s dynamic import from this package instead of the parent repository's hoisted 1.6.0 (a nesting artifact; the function is never called by the tests). Questions file Q24 | UC-8 |
 | UC-3 patch (`00024-02-A3b`) | deploy-check accepts interfaces whose circuits take a witness and marks those circuits **verify-only**; verify reaches Level 1–3 on them; execution still refuses a bundle that declares a witness | UC-3 |
-| UC-2 patch (`00024-02-A3c`) | multi-part pointers: a `256·k` payload (commitment ++ URL, zero padded) split into 256-byte parts; the parser takes `256·k`; publications discovered as Multi-Part Event packages grouped by transaction and intent (the intent from each event's `raw`), newest in canonical order (block, transaction, first part) | UC-2 |
+| UC-2 patch (`00024-02-A3c`) | multi-part pointers: a `256·k` payload (commitment ++ URL, zero padded) split into 256-byte parts (deploy-check prints one `publishBundle` call per part); the parser takes `256·k`; publications discovered as Multi-Part Event packages grouped by transaction and intent (the intent from each event's `raw`, so `@midnightntwrk/ledger-v9` 1.0.0-rc.5 becomes a dependency and an override — project 00024 standing instruction 17), newest in canonical order (block, transaction, first part); `scripts/simulate-deploy.mjs` emits one event per part; tests: `test/multipart.test.mjs` (new; incl. `test/fixtures/live-event.json`, the live Stagenet publication's real `raw` event), `hash`, `size`, `indexer` updated | UC-2 |
+
+## Multi-part: the format versus the tools
+
+Two different statements, both true after UC-2 and only the first before it:
+
+- **The payload format extends to several parts.** A pointer is `commitment ++
+  utf8(url)`, zero padded; read as "32 bytes, then everything up to the trailing
+  zeros", a `256·k` payload is the same layout with a longer URL, and a URL of up to
+  224 bytes is byte for byte the original one-event payload. Nothing in the format had
+  to change.
+- **The tools build, discover and parse several parts.** Upstream's tools did not:
+  `deployer.mjs` refused URLs over 224 bytes, `hash.mjs` built and parsed exactly 256
+  bytes, and `indexer.mjs` took the last individual event. After UC-2, deploy-check
+  splits the pointer into parts, the parser takes `256·k` bytes, and the indexer reader
+  forms Multi-Part Event packages — events of the name grouped by transaction and intent,
+  the intent read from each event's `raw` bytes — and picks the newest package in
+  canonical order. `test/multipart.test.mjs` tests the two statements separately.
 
 ## Running the suite
 

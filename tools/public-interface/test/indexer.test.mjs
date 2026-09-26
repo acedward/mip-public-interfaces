@@ -5,9 +5,15 @@
 // NOTE: these tests stub `fetch` with the shapes
 // `midnight-indexer/indexer-api/graphql/schema-v4.graphql` (4.4.0-rc.1) defines.
 // They pin the queries and the selection logic — pagination, filtering on the
-// exact public-interface event name, highest id wins, superseded ids reported —
-// but they are NOT a round trip against a running indexer, which has not been
-// done for this repository.
+// exact public-interface event name, the newest publication wins, superseded ids
+// reported — but they are NOT a round trip against a running indexer, which has
+// not been done for this repository.
+//
+// UC-2 (project 00024): a publication is a Multi-Part Event package, so each event
+// carries `raw`, from which the reader takes its transaction and intent. Here every
+// event is its own transaction (one part, one package) and `raw` is a stand-in the
+// injected `sourceOf` reads; test/multipart.test.mjs covers several parts and the
+// real ledger decoder.
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PUBLIC_INTERFACE_EVENT } from '../src/event.mjs';
 import { decodeEventName, fetchLatestBundleEvent, fetchState } from '../src/indexer.mjs';
@@ -21,10 +27,18 @@ const payloadHex = (hash, url) => {
   Buffer.from(url, 'utf8').copy(p, 32);
   return p.toString('hex');
 };
+const txOf = (id) => id.toString(16).padStart(64, '0');
 const event = (id, url, hash = '11'.repeat(32), name = PUBLIC_INTERFACE_EVENT) => ({
   __typename: 'MiscContractEvent', id, name: nameHex(name), payload: payloadHex(hash, url),
-  transaction: { hash: 'cc'.repeat(32), block: { height: 100 + id } },
+  raw: Buffer.from(JSON.stringify({ tx: txOf(id), segment: 1 })).toString('hex'),
+  transaction: { id, hash: txOf(id), block: { height: 100 + id } },
 });
+/** The stand-in for the ledger decoder: these events carry `{ tx, segment }` as raw. */
+const sourceOf = async (raw) => {
+  const { tx, segment } = JSON.parse(Buffer.from(raw, 'hex').toString('utf8'));
+  return { transactionHash: tx, segment };
+};
+const latestOf = (url, address) => fetchLatestBundleEvent(url, address, { sourceOf });
 
 /** Stub `fetch`, recording every GraphQL request body. */
 function stubIndexer(handler) {
@@ -47,21 +61,22 @@ describe('indexer queries (stubbed transport, not a live round trip)', () => {
 
   it('filters to MISC events for the one contract address', async () => {
     const calls = stubIndexer(() => ({ data: { contractEvents: [event(1, 'https://a.example/')] } }));
-    await fetchLatestBundleEvent(URL, ADDRESS);
+    await latestOf(URL, ADDRESS);
     expect(calls[0].variables).toMatchObject({ address: ADDRESS, limit: 500, offset: 0 });
     expect(calls[0].query).toContain('types: [MISC]');
     expect(calls[0].query).toContain('contractAddress: $address');
+    expect(calls[0].query).toMatch(/\braw\b/);
   });
 
   it('strips a 0x prefix from the address before querying', async () => {
     const calls = stubIndexer(() => ({ data: { contractEvents: [] } }));
-    await fetchLatestBundleEvent(URL, '0x' + ADDRESS);
+    await latestOf(URL, '0x' + ADDRESS);
     expect(calls[0].variables.address).toBe(ADDRESS);
   });
 
   it('returns null when the contract has never published a bundle', async () => {
     stubIndexer(() => ({ data: { contractEvents: [event(1, 'x', '22'.repeat(32), 'schema/v1')] } }));
-    expect(await fetchLatestBundleEvent(URL, ADDRESS)).toBeNull();
+    expect(await latestOf(URL, ADDRESS)).toBeNull();
   });
 
   it('reads only the public-interface event: look-alikes and other names are ignored', async () => {
@@ -78,21 +93,21 @@ describe('indexer queries (stubbed transport, not a live round trip)', () => {
         ],
       },
     }));
-    const latest = await fetchLatestBundleEvent(URL, ADDRESS);
+    const latest = await latestOf(URL, ADDRESS);
     expect(latest.id).toBe(2);
     expect(latest.payload.subarray(32).toString('utf8').replace(/\0+$/, '')).toBe('https://ours.example/');
     expect(latest.supersededIds).toEqual([]);
 
     stubIndexer(() => ({ data: { contractEvents: [event(9, 'https://other.example/', '99'.repeat(32), 'interface/v1')] } }));
-    expect(await fetchLatestBundleEvent(URL, ADDRESS)).toBeNull();
+    expect(await latestOf(URL, ADDRESS)).toBeNull();
   });
 
   it('accepts the name in upper-case hex, as a HexEncoded scalar may be written', async () => {
     stubIndexer(() => ({ data: { contractEvents: [{ ...event(4, 'https://hex.example/'), name: `0x${nameHex(PUBLIC_INTERFACE_EVENT).toUpperCase()}` }] } }));
-    expect((await fetchLatestBundleEvent(URL, ADDRESS)).id).toBe(4);
+    expect((await latestOf(URL, ADDRESS)).id).toBe(4);
   });
 
-  it('takes the highest id and lists the superseded ones', async () => {
+  it('takes the newest publication and lists the superseded ones', async () => {
     stubIndexer(() => ({
       data: {
         contractEvents: [
@@ -104,7 +119,7 @@ describe('indexer queries (stubbed transport, not a live round trip)', () => {
         ],
       },
     }));
-    const latest = await fetchLatestBundleEvent(URL, ADDRESS);
+    const latest = await latestOf(URL, ADDRESS);
     expect(latest.id).toBe(7);
     expect(latest.payload.subarray(0, 32).toString('hex')).toBe('77'.repeat(32));
     expect(latest.payload.subarray(32).toString('utf8').replace(/\0+$/, '')).toBe('https://latest.example/');
@@ -116,7 +131,7 @@ describe('indexer queries (stubbed transport, not a live round trip)', () => {
     const page0 = Array.from({ length: 500 }, (_, i) => event(i + 1, `https://p0-${i}.example/`));
     const page1 = [event(501, 'https://last.example/', '99'.repeat(32))];
     const calls = stubIndexer((body) => ({ data: { contractEvents: body.variables.offset === 0 ? page0 : page1 } }));
-    const latest = await fetchLatestBundleEvent(URL, ADDRESS);
+    const latest = await latestOf(URL, ADDRESS);
     expect(calls.map((c) => c.variables.offset)).toEqual([0, 500]);
     expect(latest.id).toBe(501);
     expect(latest.supersededIds).toHaveLength(500);
@@ -140,7 +155,7 @@ describe('indexer queries (stubbed transport, not a live round trip)', () => {
 
   it('surfaces GraphQL errors', async () => {
     stubIndexer(() => ({ errors: [{ message: 'contractEvents is @beta and disabled' }] }));
-    await expect(fetchLatestBundleEvent(URL, ADDRESS)).rejects.toThrow(/@beta and disabled/);
+    await expect(latestOf(URL, ADDRESS)).rejects.toThrow(/@beta and disabled/);
   });
 
   it('surfaces a transport failure', async () => {

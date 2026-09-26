@@ -268,28 +268,64 @@ export function readIndexFile(dir) {
 // ---------------------------------------------------------------------------
 // The event payload
 // ---------------------------------------------------------------------------
-export const MAX_URL_BYTES = 224;
+// Events named `mip-xxxx:public-interface[v1]` follow the Multi-Part Event rule
+// (`mip-xxxx:multi-part[v1]`): every such event of one contract in one intent of
+// one transaction is ONE part of ONE package, and a reader merges the parts in
+// emission order, keeping all 256 bytes of each. The merged payload is the
+// pointer:
+//
+//   payload[0..32)      the bundle commitment
+//   payload[32..256·k)  utf8(index.json URL), zero padded
+//
+// A URL of up to 224 bytes fits one event (k = 1, the layout of the original
+// draft, byte for byte); a longer one takes k = ceil((32 + len) / 256) parts, each
+// published by one `publishBundle` call, all in ONE guaranteed intent. The layout
+// does not change with k: a reader that takes the URL as "every byte after the
+// commitment, trailing zeros removed" reads any 256·k payload. (Patch UC-2 of
+// project 00024, mip-public-interfaces: upstream built and parsed exactly 256
+// bytes and refused URLs over 224 bytes.)
+
+/** Bytes of one part: the payload of one `publishBundle` event. */
+export const PART_BYTES = 256;
+/** The URL bytes a one-part payload holds (the rest of 256 after the commitment). */
+export const MAX_URL_BYTES = PART_BYTES - 32;
+/** Most parts a pointer may take: the Multi-Part Event reference publisher's ceiling. */
+export const MAX_PARTS = 1024;
 
 /** The URL the event carries: a URL ending in `/` names that directory's index.json. */
 export const indexUrlFor = (url) => (url.endsWith('/') ? `${url}${INDEX_FILE}` : url);
 
-/** The 256-byte on-chain payload: commitment (32 bytes) ++ utf8(url), zero padded. */
+/** Parts a pointer to `url` takes: ceil((32 + utf8 bytes of url) / 256). */
+export const partCountFor = (url) => Math.max(1, Math.ceil((32 + Buffer.byteLength(url, 'utf8')) / PART_BYTES));
+
+/** The on-chain payload: commitment (32 bytes) ++ utf8(url), zero padded to 256·k bytes. */
 export function assemblePayload(commitmentBytes, url) {
   const urlBytes = Buffer.from(url, 'utf8');
   if (commitmentBytes.length !== 32) throw new Error(`commitment must be 32 bytes, got ${commitmentBytes.length}`);
-  if (urlBytes.length > MAX_URL_BYTES) throw new Error(`url is ${urlBytes.length} bytes, the payload has room for ${MAX_URL_BYTES}`);
-  const payload = Buffer.alloc(256);
+  const parts = partCountFor(url);
+  if (parts > MAX_PARTS) throw new Error(`url is ${urlBytes.length} bytes: ${parts} parts, more than the ${MAX_PARTS} a package may have`);
+  const payload = Buffer.alloc(parts * PART_BYTES);
   Buffer.from(commitmentBytes).copy(payload, 0);
   urlBytes.copy(payload, 32);
   return payload;
 }
 
-/** Inverse of assemblePayload: `{ commitment, url }` from a 256-byte payload. */
+/** The 256-byte parts of a payload, in order: one `publishBundle(part)` call each. */
+export function payloadParts(payload) {
+  const buf = Buffer.from(payload);
+  if (buf.length === 0 || buf.length % PART_BYTES !== 0) throw new Error(`event payload must be a multiple of ${PART_BYTES} bytes, got ${buf.length}`);
+  return Array.from({ length: buf.length / PART_BYTES }, (_, i) => buf.subarray(i * PART_BYTES, (i + 1) * PART_BYTES));
+}
+
+/** Inverse of assemblePayload: `{ commitment, url, parts }` from a 256·k-byte payload (one package). */
 export function parsePayload(payload) {
   const buf = Buffer.from(payload);
-  if (buf.length !== 256) throw new Error(`event payload must be 256 bytes, got ${buf.length}`);
+  if (buf.length === 0 || buf.length % PART_BYTES !== 0) {
+    throw new Error(`event payload must be ${PART_BYTES} bytes, or a multiple of ${PART_BYTES} for a multi-part package, got ${buf.length}`);
+  }
   return {
     commitment: buf.subarray(0, 32),
     url: buf.subarray(32).toString('utf8').replace(/\0+$/, ''),
+    parts: buf.length / PART_BYTES,
   };
 }

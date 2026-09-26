@@ -3,12 +3,14 @@
 // The deployer's pre-publish check. It assembles the bundle and its index.json,
 // refuses to print a payload if the bundle would not verify against the contract
 // that is actually deployed, and otherwise prints the commitment, the final URL
-// of index.json and the exact 256-byte argument to pass to `publishBundle`.
+// of index.json and the exact 256-byte argument(s) to pass to `publishBundle`:
+// one call when the URL fits one event (224 bytes), otherwise one call per
+// 256-byte part, all in ONE guaranteed intent (the Multi-Part Event rule; patch
+// UC-2 of project 00024 — upstream refused URLs over 224 bytes).
 //
 // Refusals (each exits non-zero and says which circuit or value is at fault):
 //   * a published circuit's verifier key differs from the full build's
 //   * a published entry point name does not exist in the full build
-//   * the URL of index.json does not fit in the 224 bytes the payload leaves for it
 //   * a file in the bundle has a path the index cannot carry (see src/hash.mjs)
 //
 // A published circuit that takes a witness (a private input) is NOT refused. It is
@@ -20,7 +22,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { INDEX_FILE, IndexError, MAX_URL_BYTES, assemblePayload, indexUrlFor } from './hash.mjs';
+import { INDEX_FILE, IndexError, MAX_URL_BYTES, assemblePayload, indexUrlFor, payloadParts } from './hash.mjs';
 import { EXAMPLES, assembleBundle, exampleLayout } from './bundle.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -36,8 +38,9 @@ const USAGE = `coc-deploy-check — assemble an interface bundle and check it ag
   --interface-src <file>  the published *.Interface.compact
   --interface <dir>       its \`compact compile\` output directory
   --full <dir>            the deployed contract's \`compact compile\` output directory
-  --url <url>             URL of the bundle's ${INDEX_FILE} (<= ${MAX_URL_BYTES} bytes of utf8);
-                          a URL ending in / gets ${INDEX_FILE} appended
+  --url <url>             URL of the bundle's ${INDEX_FILE}; a URL ending in / gets ${INDEX_FILE}
+                          appended. Up to ${MAX_URL_BYTES} bytes of utf8 fit one publishBundle call;
+                          a longer URL is published as several parts in one intent
   --out <dir>             bundle directory to write (default bundle/<name>)
   --address <hex>         contract address, recorded in the bundle README
   --indexer <url>         indexer endpoint, recorded in the bundle README
@@ -96,13 +99,6 @@ export function verifyOnlyCircuits(interfaceOut, circuits, witnesses) {
  */
 export function deployCheck({ interfaceSrc, interfaceOut, fullOut, outDir, url: requestedUrl, address, indexerUrl, runtimeDep }) {
   const url = indexUrlFor(requestedUrl);
-  const urlBytes = Buffer.from(url, 'utf8').length;
-  if (urlBytes > MAX_URL_BYTES) {
-    throw new RefusedError(
-      `the URL${url !== requestedUrl ? ` (with ${INDEX_FILE} appended)` : ''} is ${urlBytes} bytes of utf8 and the event payload leaves room for ${MAX_URL_BYTES}. ` +
-      'Shorten it, or serve the bundle from a hash-addressed path so the URL stays short.',
-    );
-  }
   if (!existsSync(fullOut)) throw new RefusedError(`full build not found: ${fullOut} (build the deployed contract first)`);
 
   let bundle;
@@ -132,8 +128,11 @@ export function deployCheck({ interfaceSrc, interfaceOut, fullOut, outDir, url: 
     );
   }
 
-  const payload = assemblePayload(bundle.commitment, url);
-  return { ...bundle, url, requestedUrl, rows, payload, witnesses, verifyOnly };
+  let payload;
+  try { payload = assemblePayload(bundle.commitment, url); } catch (e) { throw new RefusedError(e.message); }
+  // One `publishBundle(part)` call per part, in this order, all in one guaranteed intent.
+  const parts = payloadParts(payload);
+  return { ...bundle, url, requestedUrl, rows, payload, parts, witnesses, verifyOnly };
 }
 
 /** Where a listed file will be fetched from, for the deployer to check their hosting. */
@@ -172,7 +171,9 @@ async function main(argv) {
   }
 
   if (o.json) {
-    console.log(JSON.stringify({ ...r, commitment: r.commitment.toString('hex'), payload: r.payload.toString('hex'), info: undefined }, null, 2));
+    console.log(JSON.stringify({
+      ...r, commitment: r.commitment.toString('hex'), payload: r.payload.toString('hex'), parts: r.parts.map((p) => p.toString('hex')), info: undefined,
+    }, null, 2));
     return 0;
   }
   const sample = exampleFileUrl(r.url, 'package.json');
@@ -183,13 +184,21 @@ async function main(argv) {
     console.log(`verify-only : ${r.verifyOnly.join(', ')} — take${r.verifyOnly.length === 1 ? 's' : ''} a witness (${r.witnesses.join(', ')}): verified at Levels 1-3, not executable by a consumer`);
   }
   for (const row of r.rows) console.log(`key ${row.status.padEnd(9)} ${row.circuit}`);
-  console.log(`url         : ${r.url} (${Buffer.from(r.url, 'utf8').length}/${MAX_URL_BYTES} bytes)${r.url !== r.requestedUrl ? ` — ${INDEX_FILE} appended to --url` : ''}`);
+  const k = r.parts.length;
+  console.log(`url         : ${r.url} (${Buffer.from(r.url, 'utf8').length} bytes; ${k} part${k === 1 ? '' : 's'}, ${MAX_URL_BYTES} bytes fit one)${r.url !== r.requestedUrl ? ` — ${INDEX_FILE} appended to --url` : ''}`);
   if (sample) console.log(`files at    : paths relative to it, e.g. ${sample}`);
   console.log(`commitment  : ${r.commitment.toString('hex')}`);
   console.log(`payload     : ${r.payload.toString('hex')}`);
   console.log('');
-  console.log(`Upload the bundle directory as is, so that the url above serves its ${INDEX_FILE}, then call, once:`);
-  console.log(`  publishBundle(0x${r.payload.toString('hex')})`);
+  if (k === 1) {
+    console.log(`Upload the bundle directory as is, so that the url above serves its ${INDEX_FILE}, then call, once:`);
+    console.log(`  publishBundle(0x${r.payload.toString('hex')})`);
+  } else {
+    console.log(`Upload the bundle directory as is, so that the url above serves its ${INDEX_FILE}, then publish the pointer as`);
+    console.log(`${k} publishBundle calls in ONE guaranteed intent, in this order (the Multi-Part Event rule; e.g. the reference`);
+    console.log('publisher of compact-multi-part-event). A reader merges them into one package; calls split over two intents are two packages:');
+    r.parts.forEach((part, i) => console.log(`  part ${i + 1}/${k}: publishBundle(0x${part.toString('hex')})`));
+  }
   return 0;
 }
 

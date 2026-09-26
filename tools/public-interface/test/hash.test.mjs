@@ -290,15 +290,19 @@ describe('event payload layout', () => {
     expect(indexUrlFor('https://a.example/nft/manifest')).toBe('https://a.example/nft/manifest');
   });
 
-  it('counts utf8 bytes, not characters', () => {
+  it('counts utf8 bytes, not characters: 224 bytes fit one part, a longer URL takes two (UC-2)', () => {
     const url = 'https://a.example/' + 'é'.repeat(103);   // 18 + 206 = 224 bytes
     expect(Buffer.from(url, 'utf8')).toHaveLength(224);
     expect(assemblePayload(c, url)).toHaveLength(256);
-    expect(() => assemblePayload(c, url + 'é')).toThrow(/224/);
+    // Upstream refused 225 bytes; under the Multi-Part Event opt-in it is a second part.
+    const longer = assemblePayload(c, url + 'é');
+    expect(longer).toHaveLength(512);
+    expect(parsePayload(longer).url).toBe(url + 'é');
   });
 
-  it('rejects a payload that is not 256 bytes, and a commitment that is not 32', () => {
-    expect(() => parsePayload(Buffer.alloc(255))).toThrow(/256/);
+  it('rejects a payload that is not a multiple of 256 bytes, and a commitment that is not 32', () => {
+    for (const n of [0, 255, 257, 511]) expect(() => parsePayload(Buffer.alloc(n))).toThrow(/256/);
+    expect(parsePayload(Buffer.alloc(512)).parts).toBe(2);
     expect(() => assemblePayload(Buffer.alloc(31), 'https://a.example/')).toThrow(/32 bytes/);
   });
 });
