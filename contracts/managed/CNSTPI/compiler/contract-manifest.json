@@ -1,0 +1,258 @@
+{
+  "manifest-version": "1",
+  "compiler-version": "0.34.0",
+  "language-version": "0.26.0",
+  "runtime-version": "0.19.0",
+  "compiler": {
+    "type": "directory",
+    "contract-info.json": {
+      "type": "file",
+      "size": 4998,
+      "hash": "55931c5ab4a4784d18a36b7419e62c5a9d0cd1b0ff0eb58d2de3017579c7ce58"
+    }
+  },
+  "contract": {
+    "type": "directory",
+    "index.d.ts": {
+      "type": "file",
+      "size": 6108,
+      "hash": "8e19b1f2de02e051a44defa76f6f6482e76b3a43974ff5077e3b8afa3c24849e"
+    },
+    "index.js": {
+      "type": "file",
+      "size": 95599,
+      "hash": "0121fca6c7a5cde34eaee1757cd07ba461019a0bc2911bf1ef6f9bdd8190c0ee"
+    },
+    "index.js.map": {
+      "type": "file",
+      "size": 4820,
+      "hash": "970a2d19e1c45d749320aaed0d0300f2cbcfec4b0aaed8ac90e0a631475b6f32"
+    }
+  },
+  "zkir": {
+    "type": "directory",
+    "decimals.bzkir": {
+      "type": "file",
+      "size": 105,
+      "hash": "4db7a08cab8682d34580a6d9fa128c868316f4f200cac487ce22191ec7bbf4d9"
+    },
+    "decimals.zkir": {
+      "type": "file",
+      "size": 1585,
+      "hash": "033ffc65469016ee387323d832eb34b9bb03044c3dcd31a8cfc7f1c08f4a6d53"
+    },
+    "mintPiece.bzkir": {
+      "type": "file",
+      "size": 519,
+      "hash": "6945f936a5fdcd3d69a3e69f4745150641871415dfb26cc7225d695506324093"
+    },
+    "mintPiece.zkir": {
+      "type": "file",
+      "size": 7721,
+      "hash": "9f1cc9b360adeee5d75caec1f2dc8e2db1d825b058409ea12b5f49e6f0c735a1"
+    },
+    "name.bzkir": {
+      "type": "file",
+      "size": 139,
+      "hash": "ef8f5b69f274fe7ae735e739593135d930375c2b602f0b33873447945ba05b0c"
+    },
+    "name.zkir": {
+      "type": "file",
+      "size": 1625,
+      "hash": "cc953aba0699ef615ac4f5f531a5cdb614c18dcce2447959227b6a712c6fa84b"
+    },
+    "publishAltairRepository.bzkir": {
+      "type": "file",
+      "size": 367,
+      "hash": "742205ab64baf1dd63870d26549c2609734dea01b00ba44b945573a8b33c6880"
+    },
+    "publishAltairRepository.zkir": {
+      "type": "file",
+      "size": 3691,
+      "hash": "9a36c553cd237be063bd5cbf692b6d07206b6860075d873e47c24471646bf91d"
+    },
+    "publishBundle.bzkir": {
+      "type": "file",
+      "size": 2708,
+      "hash": "dd6092cb95957b86073f099856ea8fbebe5ae4f8ec4943ff3272f0bd84fa02d9"
+    },
+    "publishBundle.zkir": {
+      "type": "file",
+      "size": 38309,
+      "hash": "51db2f0f52a048d4b946ed577ccf1c1e8b021e9a3d218a70156a3781dbf2ab58"
+    },
+    "publishCygnusRepository.bzkir": {
+      "type": "file",
+      "size": 367,
+      "hash": "ee8768b0ea3c17fc8761994d47f8fc25e036a97b4c0e72ccd5d59fe99e5a1bf8"
+    },
+    "publishCygnusRepository.zkir": {
+      "type": "file",
+      "size": 3691,
+      "hash": "d6386231d65e000e78fe4adde0628b29c469071c91d13d25edf772fc452277b5"
+    },
+    "publishLyraRepository.bzkir": {
+      "type": "file",
+      "size": 365,
+      "hash": "9efbd693173b38eac91c16e6c75bcbf12f24408728aa4d70bb59a45aea19ee0a"
+    },
+    "publishLyraRepository.zkir": {
+      "type": "file",
+      "size": 3687,
+      "hash": "a4fd15830123fdde6f2546e910661fb63ffd93845c7242ef35ccbfea66cfa70c"
+    },
+    "publishOrionRepository.bzkir": {
+      "type": "file",
+      "size": 366,
+      "hash": "57c6ede7a9f9d092071575dc5abc0765425e1634e717b12e6356f00f799219e0"
+    },
+    "publishOrionRepository.zkir": {
+      "type": "file",
+      "size": 3689,
+      "hash": "42cf446285d83fc65b7718c543838ab9d2e19bdea6c2338c4b7336088f356932"
+    },
+    "publishVegaRepository.bzkir": {
+      "type": "file",
+      "size": 365,
+      "hash": "9838161677346052eefa54b004e2957fb5ce680117e51c92da05660b66526c6c"
+    },
+    "publishVegaRepository.zkir": {
+      "type": "file",
+      "size": 3687,
+      "hash": "d43b277ca4c8f8cf4bf858b2b7b7cabad9280c1a576903ff25c2295b05bfad63"
+    },
+    "symbol.bzkir": {
+      "type": "file",
+      "size": 139,
+      "hash": "dbcd84cd7b0d25ec1f7974e6ed00e36340ef8c57b242909fee7ea650f1b04c51"
+    },
+    "symbol.zkir": {
+      "type": "file",
+      "size": 1625,
+      "hash": "f55599bc3a2c2a6b58ac533a34abad23c3ccc36d217ebee96b7161b0f0a315e7"
+    },
+    "tokenColor.bzkir": {
+      "type": "file",
+      "size": 165,
+      "hash": "323a90c456fdb7830eea18952874fa6a4f3bb5f6fe51a8d9ac752f4813ec9558"
+    },
+    "tokenColor.zkir": {
+      "type": "file",
+      "size": 2325,
+      "hash": "75d56fcd21daacb292efd81e1b5ee536698830d9eb2b27aea2cb9ca9a6d82cbd"
+    }
+  },
+  "keys": {
+    "type": "directory",
+    "decimals.prover": {
+      "type": "file",
+      "size": 22473,
+      "hash": "eaba53006e8329a6aeee4e8d4be3b180204b139a39dcda49dcbd175444da0a4e"
+    },
+    "decimals.verifier": {
+      "type": "file",
+      "size": 1351,
+      "hash": "0f3484a29486ef423c5b397e1bed8cd959769a95f32796683426e2f04054751d"
+    },
+    "mintPiece.prover": {
+      "type": "file",
+      "size": 5204788,
+      "hash": "a27dc6116738b6b5a0958c8ab5cfddbf49a060387ac0b2b569c5c2f98f29a678"
+    },
+    "mintPiece.verifier": {
+      "type": "file",
+      "size": 2119,
+      "hash": "1773587b98b01de99553399e07dda188d721be3d8314c36943705fa6b1d501ae"
+    },
+    "name.prover": {
+      "type": "file",
+      "size": 22470,
+      "hash": "9d1cdee81dea7f10c62d63ffcb3c715e77e5c2e146c39d9f072228df516eae7d"
+    },
+    "name.verifier": {
+      "type": "file",
+      "size": 1351,
+      "hash": "26b983cc7849cc4d70c6d1388734269b82b64366797b67c548b53e52a585e279"
+    },
+    "publishAltairRepository.prover": {
+      "type": "file",
+      "size": 2820371,
+      "hash": "5879b4d2f156fe1b74292d59193cd66cfa1552e1433dcf5eaf0839daf8297503"
+    },
+    "publishAltairRepository.verifier": {
+      "type": "file",
+      "size": 2119,
+      "hash": "36b22aa696a919d9c35c9b18c93432c3f33a7e5350f46046b4e83e6cb4706dec"
+    },
+    "publishBundle.prover": {
+      "type": "file",
+      "size": 76382701,
+      "hash": "72c60ff83ad123bb65ec21153e548929576c5459f6877907dc5f4569fb118052"
+    },
+    "publishBundle.verifier": {
+      "type": "file",
+      "size": 2119,
+      "hash": "22be3a18f3e19012658b1f44adfdc814ceba9223f48f88afeb2ffac7f52aac81"
+    },
+    "publishCygnusRepository.prover": {
+      "type": "file",
+      "size": 2820370,
+      "hash": "7a5adcfdf08a5f02650d8cf6ef17075b0371778eb0e09349181bb38235438235"
+    },
+    "publishCygnusRepository.verifier": {
+      "type": "file",
+      "size": 2119,
+      "hash": "85f14fbcdd5c0ef84c8c558ab156f87371115f932b6d3ab031ab0245ca3d76ff"
+    },
+    "publishLyraRepository.prover": {
+      "type": "file",
+      "size": 2820371,
+      "hash": "b331bf18375795593c16e155b58404860ca8fae3aa467a647ca537f31b876b11"
+    },
+    "publishLyraRepository.verifier": {
+      "type": "file",
+      "size": 2119,
+      "hash": "4d2dc33f5f13c4e4cbffeed22728eb287e0a32839942a02d44aaa2fedaf8131e"
+    },
+    "publishOrionRepository.prover": {
+      "type": "file",
+      "size": 2820374,
+      "hash": "e9e8221311906a785d8eabecf6d1d434039d6ae119dea647ffc43ba8d9aa71bf"
+    },
+    "publishOrionRepository.verifier": {
+      "type": "file",
+      "size": 2119,
+      "hash": "e0aec2b433a1dc9a7d6ae7aab32e73914c9b1921e43595f76ac6ac91992c6384"
+    },
+    "publishVegaRepository.prover": {
+      "type": "file",
+      "size": 2820369,
+      "hash": "eeb5b9891a085171b51f5079ef0d344851d175d8e028a997d47e6cdfbadf03bd"
+    },
+    "publishVegaRepository.verifier": {
+      "type": "file",
+      "size": 2119,
+      "hash": "a5bc7ad61192e83522cc02a744d01ed51c6e58fbf76a7e3e48cdee2caa86a4fd"
+    },
+    "symbol.prover": {
+      "type": "file",
+      "size": 22501,
+      "hash": "2de81dd6b82755ae6b1e18b44cb7465b90a8e17c3f65cf7ba83591c7a992e9b3"
+    },
+    "symbol.verifier": {
+      "type": "file",
+      "size": 1351,
+      "hash": "a66495f5af36658e272ea729e3b4778366f4ab1d332a46036da74acf0c490946"
+    },
+    "tokenColor.prover": {
+      "type": "file",
+      "size": 2820233,
+      "hash": "f1976fdc50f95bd84eeb7b1019c5d811158386aeba5f2aaa540efab68ce15932"
+    },
+    "tokenColor.verifier": {
+      "type": "file",
+      "size": 2119,
+      "hash": "86f2ec5e74f8e5824b8851cfd966d1cc16e10751dc3f152e14e1729bb6f7f509"
+    }
+  }
+}

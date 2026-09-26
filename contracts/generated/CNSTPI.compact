@@ -1,0 +1,154 @@
+// SPDX-License-Identifier: Apache-2.0
+//
+// GENERATED FILE — do not edit. Produced by scripts/generate-pi-contracts.ts from
+// deployments/reference-set.json row "CNST" and deployments/public-interface-set.json,
+// PI variant: CNSTPI (Constellations · PI). Source of truth for its `repository` declaration:
+// https://github.com/acedward/mip-public-interfaces/blob/main/contracts/generated/CNSTPI.compact
+//
+// Constellations · PI (CNSTPI), 0 decimals, kind byte 1; built on OpenZeppelin Compact
+// Contracts v0.4.0-alpha.3 `NativeShieldedTokenFamily` (vendored,
+// contracts/vendor/openzeppelin/).
+// Covers: open form on a collection: one address, one domain separator per piece
+// (OpenZeppelin NativeShieldedTokenFamily).
+//
+// PUBLIC INTERFACE: FULL. This whole file, with the modules it imports, IS the contract's
+// published interface (the Public Interfaces draft's open form): every circuit below is
+// impure — a ledger read, a mint or transfer, or an emitting circuit — and each has a
+// verifier key on chain that Level 2 compares; there is no pure circuit (it could not be
+// verified). The emitting circuits take the emitter secret (a witness), so a consumer
+// verifies them at Levels 1-3 but cannot execute them.
+//
+// Who may emit: only the holder of the secret whose hash the constructor stores (spec 00024
+// Q12). MIP-0018: `repository` is the only key this contract declares.
+//
+// Constructor arguments: `emitterSecretHash` (`TM_emitterSecretHashOf(secret)`, computed off chain), `name_`, `symbol_`.
+// Circuits the deployment calls, in order:
+//   mintPiece (orion)
+//   publishOrionRepository
+//   mintPiece (lyra)
+//   publishLyraRepository
+//   mintPiece (cygnus)
+//   publishCygnusRepository
+//   mintPiece (vega)
+//   publishVegaRepository
+//   mintPiece (altair)
+//   publishAltairRepository
+//   publishBundle (1 part, one guaranteed intent)
+
+pragma language_version >= 0.26.0;
+
+import CompactStandardLibrary;
+import "../TokenMetadata" prefix TM_;
+import "../OffChainInterface" prefix OCI_;
+import "../vendor/openzeppelin/token/NativeShieldedTokenFamily" prefix Token_;
+
+export { ContractAddress, Either, Maybe, ShieldedCoinInfo, ZswapCoinPublicKey, TM_emitterSecretHash };
+
+/**
+ * @param {Bytes<32>} emitterSecretHash - `TM_emitterSecretHashOf(secret)`, computed off chain;
+ *   every emitting circuit proves knowledge of `secret` through the `emitterSecret` witness.
+ * @param {Opaque<"string">} name_ - The token's name (a Compact string literal is not an Opaque<"string">).
+ * @param {Opaque<"string">} symbol_ - The token's symbol.
+ */
+constructor(emitterSecretHash: Bytes<32>, name_: Opaque<"string">, symbol_: Opaque<"string">) {
+  TM_initializeEmitter(emitterSecretHash);
+  Token_initialize(name_, symbol_, 0);
+}
+
+export circuit name(): Opaque<"string"> {
+  return Token_name();
+}
+
+export circuit symbol(): Opaque<"string"> {
+  return Token_symbol();
+}
+
+export circuit decimals(): Uint<8> {
+  return Token_decimals();
+}
+
+/**
+ * @description The colour of one piece: `tokenType(pieceDomain, this contract)`. The
+ * domain is a call argument — one address, many tokens (the ERC-1155 / EIP-7496 shape).
+ */
+export circuit tokenColor(pieceDomain: Bytes<32>): Bytes<32> {
+  return Token_tokenColor(pieceDomain);
+}
+
+/**
+ * @description Mints one unit of the piece identified by `pieceDomain` to `recipient`, a
+ * Zswap coin public key (OpenZeppelin 0.4.0-alpha.3, #833). Deliberately open: a
+ * reference test collection. Pieces: `cnstpi:orion`, `cnstpi:lyra`, `cnstpi:cygnus`, `cnstpi:vega`, `cnstpi:altair`.
+ * @param {Bytes<32>} nonce - Caller-supplied, unique per (piece, mint).
+ */
+export circuit mintPiece(pieceDomain: Bytes<32>, recipient: ZswapCoinPublicKey, nonce: Bytes<32>): ShieldedCoinInfo {
+  return Token__mint(disclose(pieceDomain), disclose(recipient), 1, disclose(nonce));
+}
+
+/**
+ * @description MIP-0018: declares `repository` of the orion piece — the URL of this contract's
+ * own source on `main` (val-type 4 URI). One declaration, one TokenMetadata event, every
+ * byte a compile-time literal. Emitter only.
+ */
+export circuit publishOrionRepository(): [] {
+  TM_assertEmitter();
+  // repository = "https://github.com/acedward/mip-public-interfaces/blob/main/contracts/generated/CNSTPI.compact" (val-type 4 URI, val-len 94)
+  TM_emitTokenMetadata(pad(32, "cnstpi:orion"), 1, pad(32, "repository"), 4, 94, pad(188, "https://github.com/acedward/mip-public-interfaces/blob/main/contracts/generated/CNSTPI.compact"));
+}
+
+/**
+ * @description MIP-0018: declares `repository` of the lyra piece — the URL of this contract's
+ * own source on `main` (val-type 4 URI). One declaration, one TokenMetadata event, every
+ * byte a compile-time literal. Emitter only.
+ */
+export circuit publishLyraRepository(): [] {
+  TM_assertEmitter();
+  // repository = "https://github.com/acedward/mip-public-interfaces/blob/main/contracts/generated/CNSTPI.compact" (val-type 4 URI, val-len 94)
+  TM_emitTokenMetadata(pad(32, "cnstpi:lyra"), 1, pad(32, "repository"), 4, 94, pad(188, "https://github.com/acedward/mip-public-interfaces/blob/main/contracts/generated/CNSTPI.compact"));
+}
+
+/**
+ * @description MIP-0018: declares `repository` of the cygnus piece — the URL of this contract's
+ * own source on `main` (val-type 4 URI). One declaration, one TokenMetadata event, every
+ * byte a compile-time literal. Emitter only.
+ */
+export circuit publishCygnusRepository(): [] {
+  TM_assertEmitter();
+  // repository = "https://github.com/acedward/mip-public-interfaces/blob/main/contracts/generated/CNSTPI.compact" (val-type 4 URI, val-len 94)
+  TM_emitTokenMetadata(pad(32, "cnstpi:cygnus"), 1, pad(32, "repository"), 4, 94, pad(188, "https://github.com/acedward/mip-public-interfaces/blob/main/contracts/generated/CNSTPI.compact"));
+}
+
+/**
+ * @description MIP-0018: declares `repository` of the vega piece — the URL of this contract's
+ * own source on `main` (val-type 4 URI). One declaration, one TokenMetadata event, every
+ * byte a compile-time literal. Emitter only.
+ */
+export circuit publishVegaRepository(): [] {
+  TM_assertEmitter();
+  // repository = "https://github.com/acedward/mip-public-interfaces/blob/main/contracts/generated/CNSTPI.compact" (val-type 4 URI, val-len 94)
+  TM_emitTokenMetadata(pad(32, "cnstpi:vega"), 1, pad(32, "repository"), 4, 94, pad(188, "https://github.com/acedward/mip-public-interfaces/blob/main/contracts/generated/CNSTPI.compact"));
+}
+
+/**
+ * @description MIP-0018: declares `repository` of the altair piece — the URL of this contract's
+ * own source on `main` (val-type 4 URI). One declaration, one TokenMetadata event, every
+ * byte a compile-time literal. Emitter only.
+ */
+export circuit publishAltairRepository(): [] {
+  TM_assertEmitter();
+  // repository = "https://github.com/acedward/mip-public-interfaces/blob/main/contracts/generated/CNSTPI.compact" (val-type 4 URI, val-len 94)
+  TM_emitTokenMetadata(pad(32, "cnstpi:altair"), 1, pad(32, "repository"), 4, 94, pad(188, "https://github.com/acedward/mip-public-interfaces/blob/main/contracts/generated/CNSTPI.compact"));
+}
+
+/**
+ * @description Public Interfaces: emits ONE part of this contract's interface pointer —
+ * the `Misc` event `mip-xxxx:public-interface[v1]` whose payload is a 256-byte part of
+ * `commitment ++ utf8(index.json URL)`, zero padded to 256·k bytes. A pointer of k > 1
+ * parts is k calls in ONE guaranteed intent, in order (the Multi-Part Event rule). The
+ * circuit writes no ledger state, so every part runs from the same state. Emitter only.
+ * @param {Bytes<256>} payload - One 256-byte part of the pointer.
+ */
+export circuit publishBundle(payload: Bytes<256>): [] {
+  TM_assertEmitter();
+  OCI_publishBundle(payload);
+}

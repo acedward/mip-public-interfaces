@@ -71,3 +71,48 @@ describe('vendored Compact modules (contracts/SOURCE.md)', () => {
     expect(oci).toContain('name: pad(32, "mip-xxxx:public-interface[v1]")');
   });
 });
+
+const VENDOR_OZ = join(CONTRACTS, 'vendor', 'openzeppelin');
+
+/** `[file, sha256]` for every row of contracts/vendor/openzeppelin/SOURCE.md's file table. */
+const pinnedOz = (): [string, string][] =>
+  readFileSync(join(VENDOR_OZ, 'SOURCE.md'), 'utf8')
+    .split('\n')
+    .filter((line) => /^\| `[^`]+` \| `[^`]+` \| `[0-9a-f]{40}` \| `[0-9a-f]{64}` \|$/.test(line))
+    .map((line) => {
+      const cells = line.split('|').map((c) => c.trim().replace(/`/g, ''));
+      return [cells[1] ?? '', cells[4] ?? ''];
+    });
+
+describe('the vendored OpenZeppelin Compact modules (contracts/vendor/openzeppelin/SOURCE.md)', () => {
+  it('pins the five modules the PI contracts import (transitively) and the LICENSE', () => {
+    expect(pinnedOz().map(([file]) => file).sort()).toEqual([
+      'LICENSE',
+      'token/FungibleToken.compact',
+      'token/NativeShieldedToken.compact',
+      'token/NativeShieldedTokenCore.compact',
+      'token/NativeShieldedTokenFamily.compact',
+      'utils/Utils.compact',
+    ]);
+  });
+
+  it.each(pinnedOz())('%s is byte-identical to its pinned upstream copy', (file, digest) => {
+    expect(sha256(readFileSync(join(VENDOR_OZ, file)))).toBe(digest);
+  });
+
+  it.each(pinnedOz().filter(([file]) => file.endsWith('.compact')))(
+    '%s is byte-identical to the installed @openzeppelin/compact-contracts 0.4.0-alpha.3',
+    (file) => {
+      const installed = join(ROOT, 'node_modules', '@openzeppelin', 'compact-contracts', file);
+      expect(readFileSync(join(VENDOR_OZ, file)).equals(readFileSync(installed))).toBe(true);
+    },
+  );
+});
+
+describe('the reference set (deployments/reference-set.json, a pinned copy — deployments/README.md)', () => {
+  it('is byte-identical to acedward/mip-0018-midnight-contracts @ cb6c675 deployments/reference-set.json', () => {
+    expect(sha256(readFileSync(join(ROOT, 'deployments', 'reference-set.json')))).toBe(
+      '6b37b56af510d3483899e04690762b12dc0a059853ed07fdd4036e5c2bf6a40b',
+    );
+  });
+});

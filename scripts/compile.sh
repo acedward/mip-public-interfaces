@@ -2,7 +2,7 @@
 # Compile this repository's contracts with the pinned Compact toolchain.
 #
 #   ./scripts/compile.sh                    every contract below, into contracts/managed/<name>/
-#   ./scripts/compile.sh probe/PublicInterfaceProbe   just one (path under contracts/, no .compact)
+#   ./scripts/compile.sh generated/LSUNPI  just one (path under contracts/, no .compact)
 #   ./scripts/compile.sh --check            compile into a temp tree and diff against the
 #                                           committed one (implies SKIP_ZK: keys are not compared)
 #   SKIP_ZK=true ./scripts/compile.sh       no key generation (TypeScript output only)
@@ -23,6 +23,13 @@ OUT_DIR="$SRC_DIR/managed"
 # contracts/SOURCE.md); every importer compiles them transitively.
 CONTRACTS=(
   "probe/PublicInterfaceProbe"
+  # The PI set (spec 00024 §6.B), written by scripts/generate-pi-contracts.ts. Each
+  # `publishBundle` (runtime Bytes<256> emit + emitter check) needs the k=18 zk
+  # parameters and a few minutes of key generation.
+  "generated/LSUNPI"
+  "generated/SSTARPI"
+  "generated/CNSTPI"
+  "generated/UPROMPI"
 )
 
 CHECK=0
@@ -64,7 +71,10 @@ for name in "${CONTRACTS[@]}"; do
     fi
   fi
   mkdir -p "$out"
-  compiler ${FLAGS[@]+"${FLAGS[@]}"} --sourceRoot "$SOURCE_ROOT" "$src" "$out"
+  # Compile from the repository root with a RELATIVE source path: the generated source map
+  # records the path it was given, and an absolute one would bake this checkout's location
+  # into the committed contract/index.js.map (and the manifest that hashes it).
+  (cd "$ROOT" && compiler ${FLAGS[@]+"${FLAGS[@]}"} --sourceRoot "$SOURCE_ROOT" "contracts/$name.compact" "$out")
 done
 
 if [ "$CHECK" = "1" ]; then
