@@ -80,6 +80,10 @@ Multi-Part Event rule here (an amendment in development of [B]): a bundle pointe
 than 224 bytes is published as `k` `publishBundle(part)` calls in ONE guaranteed intent
 — built with [Y]'s reference publisher (`vendor/compact-multi-part-event`). The patched
 tools split, discover and verify such pointers (`tools/public-interface/SOURCE.md`).
+`UPROMPI` is this repository's multi-part case: its 235-byte URL makes a 2-part pointer,
+which `test/uprompi-multipart.test.ts` publishes in one guaranteed intent against an
+in-process ledger and reads back (the reader, the patched tool from real `raw` bytes, and
+Levels 1-2 against the ledger's state of the contract).
 
 ## Toolchain
 
