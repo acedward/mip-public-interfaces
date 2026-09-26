@@ -521,6 +521,13 @@ export async function verify({ bundleDir, bundleUrl, indexerUrl, address, eventP
 
   const work = result.checks.level1.dir;
   try {
+    // A bundle whose interface declares witnesses is verified like any other; only
+    // its execution is refused (src/execute.mjs prepareCall). Read as data, not run.
+    // (Patch UC-3 of project 00024.)
+    try {
+      const declared = bundleInfo(work).witnesses;
+      if (Array.isArray(declared) && declared.length) result.witnesses = declared.map((w) => w?.name ?? String(w));
+    } catch { /* Level 2 reports a missing or unreadable contract-info.json */ }
     result.checks.level2 = await levelTwo(work, stateBytes);
     if (!result.checks.level2.ok || !result.checks.level2.wrapper.ok) return result;
     result.level = 2;
@@ -799,6 +806,10 @@ export function printReport(r) {
     if (l3.error) console.log(`L3 FAIL ${p(l3.error)}`);
     for (const row of l3.rows) console.log(`L3 ${row.status === 'OK' ? 'OK  ' : 'FAIL'} reproduced ${p(row.item)}${row.reason ? ` — ${p(row.reason)}` : ''}`);
     if (!l3.ok) console.log('     the published source does not reproduce the bundle; nothing was executed.');
+  }
+
+  if (r.witnesses?.length) {
+    console.log(`witnesses   : ${r.witnesses.map(p).join(', ')} — the circuits that take them are verified like any other; a bundle that declares a witness is never executed`);
   }
 
   if (r.execution) {

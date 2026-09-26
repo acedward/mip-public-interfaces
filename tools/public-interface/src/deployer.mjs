@@ -8,9 +8,15 @@
 // Refusals (each exits non-zero and says which circuit or value is at fault):
 //   * a published circuit's verifier key differs from the full build's
 //   * a published entry point name does not exist in the full build
-//   * the published interface declares a witness (its circuits are not reads)
 //   * the URL of index.json does not fit in the 224 bytes the payload leaves for it
 //   * a file in the bundle has a path the index cannot carry (see src/hash.mjs)
+//
+// A published circuit that takes a witness (a private input) is NOT refused. It is
+// not a read: a consumer does not have the input, so it cannot execute it, and the
+// consumer tool refuses to execute a bundle that declares one (src/execute.mjs
+// prepareCall). But it is an operation of the deployed contract with its own
+// verifier key, so Levels 1-3 verify it like any other. The report lists such
+// circuits as verify-only. (Patch UC-3 of project 00024, mip-public-interfaces.)
 import { existsSync, readFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -66,8 +72,27 @@ export class RefusedError extends Error {
 }
 
 /**
+ * The published circuits that take a private input: those whose compiled ZKIR
+ * (`<interfaceOut>/zkir/<name>.zkir`, versions 2 and 3) has a `private_input`
+ * instruction. They are verify-only: their keys are checked like any other, but a
+ * consumer cannot execute them. Only an interface that declares witnesses has
+ * any; there, a circuit whose ZKIR cannot be read is counted as verify-only too.
+ */
+export function verifyOnlyCircuits(interfaceOut, circuits, witnesses) {
+  if (!witnesses?.length) return [];
+  return circuits.filter((name) => {
+    let zkir;
+    try { zkir = JSON.parse(readFileSync(join(interfaceOut, 'zkir', `${name}.zkir`), 'utf8')); }
+    catch { return true; }
+    return !Array.isArray(zkir?.instructions) || zkir.instructions.some((i) => i?.op === 'private_input');
+  });
+}
+
+/**
  * Assemble and check. Throws RefusedError when the bundle must not be published.
- * Returns everything the deployer has to act on.
+ * Returns everything the deployer has to act on, including `witnesses` (the
+ * witnesses the interface declares) and `verifyOnly` (the published circuits that
+ * take one: verified at Levels 1-3, never executed).
  */
 export function deployCheck({ interfaceSrc, interfaceOut, fullOut, outDir, url: requestedUrl, address, indexerUrl, runtimeDep }) {
   const url = indexUrlFor(requestedUrl);
@@ -88,12 +113,8 @@ export function deployCheck({ interfaceSrc, interfaceOut, fullOut, outDir, url: 
     throw e;
   }
 
-  if (bundle.info.witnesses?.length) {
-    throw new RefusedError(
-      `the published interface declares witness(es) ${bundle.info.witnesses.map((w) => w.name ?? w).join(', ')}. ` +
-      'A circuit that takes a private input is not a read and consumers cannot execute it; publish only witness-free circuits.',
-    );
-  }
+  const witnesses = (bundle.info.witnesses ?? []).map((w) => w?.name ?? String(w));
+  const verifyOnly = verifyOnlyCircuits(interfaceOut, bundle.circuits, witnesses);
 
   const rows = [];
   for (const name of bundle.circuits) {
@@ -112,7 +133,7 @@ export function deployCheck({ interfaceSrc, interfaceOut, fullOut, outDir, url: 
   }
 
   const payload = assemblePayload(bundle.commitment, url);
-  return { ...bundle, url, requestedUrl, rows, payload };
+  return { ...bundle, url, requestedUrl, rows, payload, witnesses, verifyOnly };
 }
 
 /** Where a listed file will be fetched from, for the deployer to check their hosting. */
@@ -158,6 +179,9 @@ async function main(argv) {
   console.log(`bundle      : ${r.outDir}`);
   console.log(`              ${r.files.length} files, ${r.bytes} bytes; ${INDEX_FILE} ${r.indexBytes} bytes, lists ${r.index.files.length}; interface ${r.interfaceRel}`);
   console.log(`published   : ${r.circuits.join(', ')}`);
+  if (r.verifyOnly.length) {
+    console.log(`verify-only : ${r.verifyOnly.join(', ')} — take${r.verifyOnly.length === 1 ? 's' : ''} a witness (${r.witnesses.join(', ')}): verified at Levels 1-3, not executable by a consumer`);
+  }
   for (const row of r.rows) console.log(`key ${row.status.padEnd(9)} ${row.circuit}`);
   console.log(`url         : ${r.url} (${Buffer.from(r.url, 'utf8').length}/${MAX_URL_BYTES} bytes)${r.url !== r.requestedUrl ? ` — ${INDEX_FILE} appended to --url` : ''}`);
   if (sample) console.log(`files at    : paths relative to it, e.g. ${sample}`);
