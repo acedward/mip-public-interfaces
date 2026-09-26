@@ -29,7 +29,8 @@ describe('the README', () => {
       '# MIP-xxxx: Public Interfaces for Compact Contracts',
       '## Summary',
       '## How to',
-      '### Contract owners: how to implement the spec',
+      // PR #6 (e79c7cf) renamed this heading; the test had not followed (UC-8, project 00024).
+      '### Contract owners: how to use the reference format',
       '### Consumers: how to read and verify',
       '## Spec',
     ]);
@@ -54,8 +55,10 @@ describe('the README', () => {
     ]) expect(prose).toContain(fact);
   });
 
-  it('says that at Level 2 the executed wrapper is the entry writer\'s code, and that only Level 3 ties the code', () => {
-    expect(prose).toMatch(/at Level 2 the executed wrapper is the entry writer's code/i);
+  it('says that at Level 2 the publisher\'s wrapper remains trusted, and that only Level 3 ties the code', () => {
+    // PR #6 (e79c7cf) reworded "at Level 2 the executed wrapper is the entry writer's
+    // code"; the test had not followed (UC-8, project 00024).
+    expect(prose).toMatch(/at Level 2 the publisher's wrapper remains trusted/i);
     expect(prose).toMatch(/only Level 3 ties the code/i);
     expect(prose).not.toMatch(/the published circuits are the deployed circuits/i);
   });

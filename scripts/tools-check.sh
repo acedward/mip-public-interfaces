@@ -13,6 +13,13 @@
 #     the `compact` CLI runs `compact compile +0.34.0` (the host default is untouched).
 #   * `stat`: upstream's scripts/build.sh calls BSD `stat -f %m` (macOS). On a GNU
 #     system that exits non-zero and the script stops; a shim maps it to `stat -c %Y`.
+#   * vitest's worker RPC timeout: upstream's tests compile synchronously
+#     (execFileSync) inside the vitest worker; generating the keys of a circuit that
+#     emits a runtime Bytes<256> payload takes minutes on a slower host, longer than
+#     vitest's fixed 60 s worker RPC timeout, which then reports one unhandled error
+#     ("Timeout calling \"onTaskUpdate\"") and exits 1 although every test passed.
+#     This harness accepts that run with a WARNING only when every test passed and
+#     every unhandled error is that timeout; anything else keeps its exit status.
 # Key generation needs the zk parameters (MIDNIGHT_PP or ~/.cache/midnight/zk-params).
 set -euo pipefail
 
@@ -59,4 +66,21 @@ echo "== compactc $("$COMPACT_BIN" compile --version)"
 cd "$TOOLS"
 [ -d node_modules ] || npm ci
 ./scripts/build.sh "$@"
-npm test
+
+LOG="$SHIM/vitest.log"
+set +e
+npm test > "$LOG" 2>&1
+rc=$?
+set -e
+cat "$LOG"
+if [ "$rc" -ne 0 ]; then
+  plain="$(sed 's/\x1b\[[0-9;]*m//g' "$LOG")"
+  errors="$(sed -n 's/^ *Errors *\([0-9][0-9]*\) errors\{0,1\}.*/\1/p' <<<"$plain" | tail -1)"
+  timeouts="$(grep -c 'Error: \[vitest-worker\]: Timeout calling "onTaskUpdate"' <<<"$plain" || true)"
+  if grep -Eq '^ *Tests +[0-9]+ passed' <<<"$plain" && ! grep -Eq '^ *(Tests|Test Files) .*failed' <<<"$plain" \
+     && [ -n "$errors" ] && [ "$errors" -ge 1 ] && [ "$errors" = "$timeouts" ]; then
+    echo "== WARNING: every test passed; vitest reported $errors unhandled worker RPC timeout(s) (a synchronous compile outlasted its 60 s RPC timeout) — accepted, see the header of this script"
+    exit 0
+  fi
+  exit "$rc"
+fi

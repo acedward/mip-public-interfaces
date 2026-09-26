@@ -33,6 +33,7 @@
     "@noble/curves": "2.4.0"
   },
   "devDependencies": {
+    "@scure/bip39": "2.0.1",
     "vitest": "3.2.4"
   },
   "allowScripts": {
