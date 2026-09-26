@@ -1,0 +1,16 @@
+node_modules/
+out/
+*.log
+.DS_Store
+
+# Secrets and local configuration: never commit. Wallet mnemonics, seeds and the
+# emitter secret (METADATA_EMISSOR_SECRET) live outside the repository.
+.env
+.env.*
+*.secret
+*.mnemonic
+*.seed
+
+# The private-state provider (midnight-js level-private-state-provider) creates this
+# LevelDB in the working directory during a local deployment run.
+midnight-level-db/

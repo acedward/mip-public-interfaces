@@ -1,0 +1,15 @@
+{
+  "name": "mip-public-interfaces",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Public-interface and dual MIP-0018 contract sets for testing the Public Interfaces for Compact Contracts draft with Multi-Part Event",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/acedward/mip-public-interfaces.git"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}
