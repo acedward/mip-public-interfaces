@@ -33,11 +33,23 @@ Status: **in development** (branch `feat/00024-02-public-interface`).
 ```
 contracts/TokenMetadata.compact      MIP-0018 module (UC-1 layout, emitter secret) — vendored, see contracts/SOURCE.md
 contracts/OffChainInterface.compact  [B]'s publishBundle module — vendored, see contracts/SOURCE.md
-scripts/                             generator, compile, deploy, bundle and fixture scripts
+contracts/probe/                     PublicInterfaceProbe: publishBundle behind the emitter secret (a test harness)
+contracts/managed/                   compiler output (generated JS/TS, ZKIR, metadata, verifier keys; no proving keys)
+tools/public-interface/              public-interface-deploy-check / public-interface-verify: a patched copy of
+                                     [B]'s reference tools (own npm package; see its SOURCE.md)
+vendor/compact-multi-part-event/     [Y]'s reference publisher and reader, unmodified (see its SOURCE.md)
+scripts/                             compile, tools harness; generator, deploy, bundle and fixture scripts to come
 deployments/                         the contract matrix and public deployment records
 fixtures/                            test inputs exported for the token indexer
 test/                                this repository's tests (vitest)
 ```
+
+**Publishing a long pointer.** Events named `mip-xxxx:public-interface[v1]` follow the
+Multi-Part Event rule here (an amendment in development of [B]): a bundle pointer is
+`commitment ++ utf8(index.json URL)`, zero padded to `256·k` bytes, and a URL longer
+than 224 bytes is published as `k` `publishBundle(part)` calls in ONE guaranteed intent
+— built with [Y]'s reference publisher (`vendor/compact-multi-part-event`). The patched
+tools split, discover and verify such pointers (`tools/public-interface/SOURCE.md`).
 
 ## Toolchain
 
@@ -52,9 +64,16 @@ test/                                this repository's tests (vitest)
 
 ```sh
 npm ci
+npm run tools:ci      # the patched public-interface tools are their own npm package
 npm run typecheck
-npm test          # includes the one-copy check of the pinned runtime packages
+npm test              # this repository's tests (the one-copy pin check, the publisher test)
+npm run tools:check   # the tools' own build and suite (minutes: it compiles [B]'s examples with keys)
+./scripts/compile.sh  # recompile contracts/managed/ with compactc 0.34.0
 ```
+
+The public-interface tools are called `public-interface-deploy-check` and
+`public-interface-verify` (`npm run public-interface-verify -- --help`); the copied
+binaries keep their upstream names `coc-deploy-check` / `coc-verify` as aliases.
 
 ## License
 

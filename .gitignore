@@ -14,3 +14,11 @@ node_modules/
 # The private-state provider (midnight-js level-private-state-provider) creates this
 # LevelDB in the working directory during a local deployment run.
 midnight-level-db/
+
+# Compiled contracts: the generated JS/TS, the ZKIR, the compiler metadata and the
+# VERIFIER keys are committed (a public-interface bundle ships verifier keys and
+# Level 2 compares them with the chain). Proving keys are not: they are large and a
+# pure function of the ZKIR (scripts/compile.sh regenerates them).
+contracts/managed/*/keys/*
+!contracts/managed/*/keys/*.verifier
+*.bzkir

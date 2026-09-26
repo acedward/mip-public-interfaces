@@ -1,0 +1,40 @@
+// SPDX-License-Identifier: Apache-2.0
+//
+// A TEST HARNESS, not a token: the smallest contract that publishes a public-interface
+// pointer the way every contract of this repository does. `publishBundle` checks the
+// emitter secret first (TokenMetadata's `assertEmitter`, spec 00024 Q12 / FR-019b), then
+// emits ONE part — one `Misc` event named `mip-xxxx:public-interface[v1]` — through the
+// Public Interfaces draft's own module.
+//
+// Under the Multi-Part Event opt-in (UC-2), a pointer whose index.json URL does not fit
+// one event is several `publishBundle(part)` calls in ONE guaranteed intent. The circuit
+// writes no ledger state (a read of the sealed emitter-secret hash, then the event), so
+// the Multi-Part Event reference publisher can run it once per part against one pinned
+// state. test/publisher.test.ts builds such transactions offline.
+
+pragma language_version >= 0.26.0;
+
+import CompactStandardLibrary;
+import "../TokenMetadata" prefix TM_;
+import "../OffChainInterface" prefix OCI_;
+
+export { TM_emitterSecretHash };
+
+/**
+ * @param {Bytes<32>} emitterSecretHash - `emitterSecretHashOf(secret)`, computed off chain;
+ *   `publishBundle` proves knowledge of `secret` through the `emitterSecret` witness.
+ */
+constructor(emitterSecretHash: Bytes<32>) {
+  TM_initializeEmitter(emitterSecretHash);
+}
+
+/** The commitment the constructor stores for `secret` (SHA-256 of pad(32, "mip-0018:emitter:") ++ secret). */
+export pure circuit emitterSecretHashOf(secret: Bytes<32>): Bytes<32> {
+  return TM_emitterSecretHashOf(secret);
+}
+
+/** One part of the contract's public-interface pointer; only the emitter may publish. */
+export circuit publishBundle(payload: Bytes<256>): [] {
+  TM_assertEmitter();
+  OCI_publishBundle(payload);
+}

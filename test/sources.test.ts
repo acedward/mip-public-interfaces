@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 //
-// The vendored Compact modules are unmodified copies of pinned upstream files
-// (contracts/SOURCE.md). A copy that drifts from its pinned SHA-256 fails here.
+// The vendored files are unmodified copies of pinned upstream files: the Compact
+// modules (contracts/SOURCE.md) and the Multi-Part Event publisher and reader
+// (vendor/compact-multi-part-event/SOURCE.md). A copy that drifts from its pinned
+// SHA-256 fails here.
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -24,6 +26,31 @@ const pinned = (): [string, string][] =>
       if (!file || !digest) throw new Error(`malformed SOURCE.md row: ${line}`);
       return [file, digest];
     });
+
+const VENDOR_Y = join(ROOT, 'vendor', 'compact-multi-part-event');
+
+/** `[path, sha256]` for every row of vendor/compact-multi-part-event/SOURCE.md's file table. */
+const pinnedY = (): [string, string][] =>
+  readFileSync(join(VENDOR_Y, 'SOURCE.md'), 'utf8')
+    .split('\n')
+    .filter((line) => /^\| `(LICENSE|src\/[^`]+)` \| `[0-9a-f]{40}` \| `[0-9a-f]{64}` \|$/.test(line))
+    .map((line) => {
+      const [, path, , digest] = line.split('|').map((c) => c.trim().replace(/`/g, ''));
+      return [path ?? '', digest ?? ''];
+    });
+
+describe('the vendored Multi-Part Event publisher and reader (vendor/compact-multi-part-event/SOURCE.md)', () => {
+  it('pins LICENSE and every file of src/publisher and src/reader', () => {
+    const files = pinnedY().map(([path]) => path);
+    expect(files).toContain('LICENSE');
+    expect(files.filter((f) => f.startsWith('src/publisher/'))).toHaveLength(7);
+    expect(files.filter((f) => f.startsWith('src/reader/'))).toHaveLength(5);
+  });
+
+  it.each(pinnedY())('%s is byte-identical to its pinned upstream copy', (path, digest) => {
+    expect(sha256(readFileSync(join(VENDOR_Y, path)))).toBe(digest);
+  });
+});
 
 describe('vendored Compact modules (contracts/SOURCE.md)', () => {
   it('pins exactly TokenMetadata.compact and OffChainInterface.compact', () => {
