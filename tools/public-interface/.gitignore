@@ -1,0 +1,16 @@
+node_modules/
+build/
+bundle/
+sim/
+tmp/
+/out/
+.DS_Store
+.env
+.env.*
+midnight-level-db/
+deploy-tools/.contract/
+deploy-tools/*.log
+deploy-tools/contracts/managed/
+deploy-tools/logs/
+deploy-tools/.wrangler/
+deploy-tools/deployment.json.tmp.*

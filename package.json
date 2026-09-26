@@ -16,7 +16,11 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "tools:ci": "npm ci --prefix tools/public-interface",
+    "tools:check": "./scripts/tools-check.sh",
+    "public-interface-deploy-check": "node tools/public-interface/src/deployer.mjs",
+    "public-interface-verify": "node tools/public-interface/src/verify.mjs"
   },
   "dependencies": {
     "@midnight-ntwrk/compact-runtime": "0.19.0",
