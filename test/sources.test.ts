@@ -136,3 +136,9 @@ describe('copied scripts (scripts/SOURCE.md)', () => {
   });
 });
 
+describe('.gitignore keeps secrets out of the repository', () => {
+  it('ignores secret files, private state and generated maintenance keys', () => {
+    const patterns = readFileSync(join(ROOT, '.gitignore'), 'utf8').split('\n').map((l) => l.trim());
+    for (const p of ['.env', '*.secret', '*.mnemonic', '*.seed', '*.maintenance-key.json', 'midnight-level-db/']) expect(patterns).toContain(p);
+  });
+});

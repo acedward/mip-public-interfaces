@@ -10,6 +10,10 @@ node_modules/
 *.secret
 *.mnemonic
 *.seed
+# The maintenance keys a staged deploy generates (scripts/staged-deploy.ts writes
+# <row>.maintenance-key.json into MN_MAINTENANCE_KEY_DIR, which belongs outside the
+# repository): never commit one, wherever it is written.
+*.maintenance-key.json
 
 # The private-state provider (midnight-js level-private-state-provider) creates this
 # LevelDB in the working directory during a local deployment run.
