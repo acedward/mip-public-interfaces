@@ -1,0 +1,58 @@
+{
+  "manifest-version": "1",
+  "compiler-version": "0.34.0",
+  "language-version": "0.26.0",
+  "runtime-version": "0.19.0",
+  "compiler": {
+    "type": "directory",
+    "contract-info.json": {
+      "type": "file",
+      "size": 1215,
+      "hash": "8d3aa85e432f77a0a96c4c958e9ba505d709d81e7cab222d296c97820985e06c"
+    }
+  },
+  "contract": {
+    "type": "directory",
+    "index.d.ts": {
+      "type": "file",
+      "size": 1834,
+      "hash": "78ad02ea432d9d3846505df7cb17961e0d4f24dfd377d37ec6a690a16695763d"
+    },
+    "index.js": {
+      "type": "file",
+      "size": 21336,
+      "hash": "4d4657047797075bb22127f365a298d4788828503d4de4d2456f14582eee0c64"
+    },
+    "index.js.map": {
+      "type": "file",
+      "size": 1175,
+      "hash": "ee062cf1fe49ae0a191e47c0f96b2be5fd30e801ff98f552bb5e45299a8b870c"
+    }
+  },
+  "zkir": {
+    "type": "directory",
+    "publishBundle.bzkir": {
+      "type": "file",
+      "size": 2708,
+      "hash": "dd6092cb95957b86073f099856ea8fbebe5ae4f8ec4943ff3272f0bd84fa02d9"
+    },
+    "publishBundle.zkir": {
+      "type": "file",
+      "size": 38309,
+      "hash": "51db2f0f52a048d4b946ed577ccf1c1e8b021e9a3d218a70156a3781dbf2ab58"
+    }
+  },
+  "keys": {
+    "type": "directory",
+    "publishBundle.prover": {
+      "type": "file",
+      "size": 76382701,
+      "hash": "72c60ff83ad123bb65ec21153e548929576c5459f6877907dc5f4569fb118052"
+    },
+    "publishBundle.verifier": {
+      "type": "file",
+      "size": 2119,
+      "hash": "22be3a18f3e19012658b1f44adfdc814ceba9223f48f88afeb2ffac7f52aac81"
+    }
+  }
+}

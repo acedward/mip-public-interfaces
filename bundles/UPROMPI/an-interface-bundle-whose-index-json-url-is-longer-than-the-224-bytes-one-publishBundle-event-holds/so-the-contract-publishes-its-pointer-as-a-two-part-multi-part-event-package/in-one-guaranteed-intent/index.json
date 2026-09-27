@@ -1,0 +1,116 @@
+{
+  "bundle": "v1",
+  "commitment": "ecmh-jubjub-grouphash",
+  "hash": "0584facb44d6c3bc2839e4d0fd1be5af1b5f2722ddf9b1cc0b6fe445d2b30186",
+  "compiler": {
+    "name": "compactc",
+    "version": "0.34.0"
+  },
+  "files": [
+    {
+      "path": "LICENSE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "size": 11358
+    },
+    {
+      "path": "NOTICE",
+      "sha256": "21b24bc6003b580752442fa611325a8523d3a89662c79c7feaf6955967d1410a",
+      "size": 621
+    },
+    {
+      "path": "README.md",
+      "sha256": "38bb7dfd30e1ed8d29c2761f102af99d00186b2bf8a5081876ca40de400e730c",
+      "size": 3656
+    },
+    {
+      "path": "SOURCE.md",
+      "sha256": "8293175030428f0094f3af34eb11bcc67da8b134037b498344520b303f2bdc3d",
+      "size": 1435
+    },
+    {
+      "path": "out/compiler/contract-info.json",
+      "sha256": "67ff976f03d626b28ba75c7f299354500502939bcf55135226a151df20e2b1bd",
+      "size": 4726
+    },
+    {
+      "path": "out/contract/index.d.ts",
+      "sha256": "da2f4023559b5a107af7285aed7ac883c31de064ac5fa7b9138a6e4bed0fa913",
+      "size": 5002
+    },
+    {
+      "path": "out/contract/index.js",
+      "sha256": "047d4f99a9c21b7c97474c27cfd6590d0e3386405318a4b6dd286ca13275e2e4",
+      "size": 86583
+    },
+    {
+      "path": "out/contract/package.json",
+      "sha256": "5a065fe7d8eab2a582f428e11c2ea63aaf70607a54f69cfd5c711b5c53d91b32",
+      "size": 21
+    },
+    {
+      "path": "out/keys/decimals.verifier",
+      "sha256": "95a209a810ddd347aa984bb6c6a5c57ba66ef29b4221f1fafd3f04e1fa4fdec9",
+      "size": 1351
+    },
+    {
+      "path": "out/keys/domainSep.verifier",
+      "sha256": "9ea203699d4159501c9884d10000e14efdff0f5cd4c5327097630e19c86a99ed",
+      "size": 1351
+    },
+    {
+      "path": "out/keys/mint.verifier",
+      "sha256": "9f063777af5403b7c1bf4a4877767dda04f3a0414a0d021d38b1eb4b8e523b47",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/mints.verifier",
+      "sha256": "546c0357fe31e5395d25161cd6a6c048fbd8827456aa1d14f573d5db08ae1d7f",
+      "size": 1351
+    },
+    {
+      "path": "out/keys/name.verifier",
+      "sha256": "b36a8137f9cb7bce5546e12d5194c5e72a8caa1b11441c35a0f2379246e04387",
+      "size": 1351
+    },
+    {
+      "path": "out/keys/publishBundle.verifier",
+      "sha256": "22be3a18f3e19012658b1f44adfdc814ceba9223f48f88afeb2ffac7f52aac81",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/publishRepository.verifier",
+      "sha256": "92abfc7f40d9f6b42d317fcaf72a518f26dd596bd886972748803fcb04b3fb38",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/symbol.verifier",
+      "sha256": "21005ce77566c9a7f5fed12b07c79796abd19b6d6afbc6553ae6aeb9e908b6d9",
+      "size": 1351
+    },
+    {
+      "path": "out/keys/tokenColor.verifier",
+      "sha256": "c306d0918fe3c3d3839eea1d35af1eff8a00d947d7aae2035a49be43efce35d4",
+      "size": 2119
+    },
+    {
+      "path": "package.json",
+      "sha256": "2cc0ed034960ed06b2810382faf4ff48b050dd027b67692eb2712f93bea7826f",
+      "size": 329
+    },
+    {
+      "path": "src/OffChainInterface.compact",
+      "sha256": "c9aaba4de48b17ac3c532e296a223da95836e5ad0d3f0e83f5d15f35cfc94f88",
+      "size": 2100
+    },
+    {
+      "path": "src/TokenMetadata.compact",
+      "sha256": "7d16b4da4209f48815da07950513bbd58b2f14d795db8fe54f7fd2d5b7fb5847",
+      "size": 12617
+    },
+    {
+      "path": "src/generated/UPROMPI.compact",
+      "sha256": "682f568c64dc66aeb5104f343daa6ba1b8d8f0aeb20f132df9c996463048f670",
+      "size": 5433
+    }
+  ]
+}

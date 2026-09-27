@@ -1,0 +1,207 @@
+#!/usr/bin/env node
+// SPDX-License-Identifier: Apache-2.0
+// The deployer's pre-publish check. It assembles the bundle and its index.json,
+// refuses to print a payload if the bundle would not verify against the contract
+// that is actually deployed, and otherwise prints the commitment, the final URL
+// of index.json and the exact 256-byte argument(s) to pass to `publishBundle`:
+// one call when the URL fits one event (224 bytes), otherwise one call per
+// 256-byte part, all in ONE guaranteed intent (the Multi-Part Event rule; patch
+// UC-2 of project 00024 — upstream refused URLs over 224 bytes).
+//
+// Refusals (each exits non-zero and says which circuit or value is at fault):
+//   * a published circuit's verifier key differs from the full build's
+//   * a published entry point name does not exist in the full build
+//   * a file in the bundle has a path the index cannot carry (see src/hash.mjs)
+//
+// A published circuit that takes a witness (a private input) is NOT refused. It is
+// not a read: a consumer does not have the input, so it cannot execute it, and the
+// consumer tool refuses to execute a bundle that declares one (src/execute.mjs
+// prepareCall). But it is an operation of the deployed contract with its own
+// verifier key, so Levels 1-3 verify it like any other. The report lists such
+// circuits as verify-only. (Patch UC-3 of project 00024, mip-public-interfaces.)
+import { existsSync, readFileSync } from 'node:fs';
+import { basename, dirname, join, resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { INDEX_FILE, IndexError, MAX_URL_BYTES, assemblePayload, indexUrlFor, payloadParts } from './hash.mjs';
+import { EXAMPLES, assembleBundle, exampleLayout } from './bundle.mjs';
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const REPO = dirname(HERE);
+export { MAX_URL_BYTES };
+
+const USAGE = `coc-deploy-check — assemble an interface bundle and check it against the deployed contract
+
+  deploy-check --example <${Object.keys(EXAMPLES).join('|')}> --url <url> [--out <dir>]
+  deploy-check --interface-src <file> --interface <dir> --full <dir> --url <url> [--out <dir>]
+
+  --example <name>        use this repository's built example (paths inferred from build/)
+  --interface-src <file>  the published *.Interface.compact
+  --interface <dir>       its \`compact compile\` output directory
+  --full <dir>            the deployed contract's \`compact compile\` output directory
+  --url <url>             URL of the bundle's ${INDEX_FILE}; a URL ending in / gets ${INDEX_FILE}
+                          appended. Up to ${MAX_URL_BYTES} bytes of utf8 fit one publishBundle call;
+                          a longer URL is published as several parts in one intent
+  --out <dir>             bundle directory to write (default bundle/<name>)
+  --address <hex>         contract address, recorded in the bundle README
+  --indexer <url>         indexer endpoint, recorded in the bundle README
+  --json                  machine-readable output
+`;
+
+export function parseArgv(argv) {
+  const o = {};
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    const next = () => { if (i + 1 >= argv.length) throw new Error(`${a} needs a value`); return argv[++i]; };
+    switch (a) {
+      case '--example': o.example = next(); break;
+      case '--interface-src': o.interfaceSrc = next(); break;
+      case '--interface': o.interfaceOut = next(); break;
+      case '--full': o.fullOut = next(); break;
+      case '--url': o.url = next(); break;
+      case '--out': o.outDir = next(); break;
+      case '--address': o.address = next(); break;
+      case '--indexer': o.indexerUrl = next(); break;
+      case '--json': o.json = true; break;
+      case '-h': case '--help': o.help = true; break;
+      default: throw new Error(`unknown option ${a}`);
+    }
+  }
+  return o;
+}
+
+/** Thrown for every refusal, so callers can distinguish them from crashes. */
+export class RefusedError extends Error {
+  constructor(message) { super(message); this.name = 'RefusedError'; }
+}
+
+/**
+ * The published circuits that take a private input: those whose compiled ZKIR
+ * (`<interfaceOut>/zkir/<name>.zkir`, versions 2 and 3) has a `private_input`
+ * instruction. They are verify-only: their keys are checked like any other, but a
+ * consumer cannot execute them. Only an interface that declares witnesses has
+ * any; there, a circuit whose ZKIR cannot be read is counted as verify-only too.
+ */
+export function verifyOnlyCircuits(interfaceOut, circuits, witnesses) {
+  if (!witnesses?.length) return [];
+  return circuits.filter((name) => {
+    let zkir;
+    try { zkir = JSON.parse(readFileSync(join(interfaceOut, 'zkir', `${name}.zkir`), 'utf8')); }
+    catch { return true; }
+    return !Array.isArray(zkir?.instructions) || zkir.instructions.some((i) => i?.op === 'private_input');
+  });
+}
+
+/**
+ * Assemble and check. Throws RefusedError when the bundle must not be published.
+ * Returns everything the deployer has to act on, including `witnesses` (the
+ * witnesses the interface declares) and `verifyOnly` (the published circuits that
+ * take one: verified at Levels 1-3, never executed).
+ */
+export function deployCheck({ interfaceSrc, interfaceOut, fullOut, outDir, url: requestedUrl, address, indexerUrl, runtimeDep, extraFiles, interfaceKind }) {
+  const url = indexUrlFor(requestedUrl);
+  if (!existsSync(fullOut)) throw new RefusedError(`full build not found: ${fullOut} (build the deployed contract first)`);
+
+  let bundle;
+  try {
+    bundle = assembleBundle({ interfaceSrc, interfaceOut, outDir, url, address, indexerUrl, runtimeDep, extraFiles, interfaceKind });
+  } catch (e) {
+    if (e instanceof IndexError) throw new RefusedError(e.message);
+    throw e;
+  }
+
+  const witnesses = (bundle.info.witnesses ?? []).map((w) => w?.name ?? String(w));
+  const verifyOnly = verifyOnlyCircuits(interfaceOut, bundle.circuits, witnesses);
+
+  const rows = [];
+  for (const name of bundle.circuits) {
+    const shippedPath = join(bundle.outDir, 'out', 'keys', `${name}.verifier`);
+    if (!existsSync(shippedPath)) { rows.push({ circuit: name, status: 'MISSING', reason: 'no verifier key in the interface build (is the circuit pure?)' }); continue; }
+    const fullPath = join(fullOut, 'keys', `${name}.verifier`);
+    if (!existsSync(fullPath)) { rows.push({ circuit: name, status: 'ABSENT', reason: 'the deployed contract exports no entry point with this name' }); continue; }
+    const same = readFileSync(shippedPath).equals(readFileSync(fullPath));
+    rows.push({ circuit: name, status: same ? 'IDENTICAL' : 'DIFFERENT', reason: same ? undefined : 'the key this source compiles to is not the key the contract deployed (check the ledger declaration order)' });
+  }
+  const bad = rows.filter((r) => r.status !== 'IDENTICAL');
+  if (bad.length) {
+    throw new RefusedError(
+      `refusing to publish: ${bad.map((r) => `${r.circuit} — ${r.status}: ${r.reason}`).join('; ')}`,
+    );
+  }
+
+  let payload;
+  try { payload = assemblePayload(bundle.commitment, url); } catch (e) { throw new RefusedError(e.message); }
+  // One `publishBundle(part)` call per part, in this order, all in one guaranteed intent.
+  const parts = payloadParts(payload);
+  return { ...bundle, url, requestedUrl, rows, payload, parts, witnesses, verifyOnly };
+}
+
+/** Where a listed file will be fetched from, for the deployer to check their hosting. */
+export function exampleFileUrl(indexUrl, path) {
+  try { return new URL(path, indexUrl).href; } catch { return null; }
+}
+
+async function main(argv) {
+  let o;
+  try { o = parseArgv(argv); } catch (e) { console.error(`error: ${e.message}\n\n${USAGE}`); return 2; }
+  if (o.help) { console.log(USAGE); return 0; }
+  if (!o.url) { console.error(`error: --url is required\n\n${USAGE}`); return 2; }
+
+  let { interfaceSrc, interfaceOut, fullOut, outDir } = o;
+  if (o.example) {
+    const l = exampleLayout(o.example, REPO);
+    interfaceSrc ??= l.interfaceSrc; interfaceOut ??= l.interfaceOut; fullOut ??= l.fullOut;
+    outDir ??= join(REPO, 'bundle', o.example);
+    if (!existsSync(interfaceOut) || !existsSync(fullOut)) {
+      console.error(`error: ${o.example} is not built; run scripts/build.sh first`);
+      return 2;
+    }
+  }
+  if (!interfaceSrc || !interfaceOut || !fullOut) { console.error(`error: need --example, or all of --interface-src/--interface/--full\n\n${USAGE}`); return 2; }
+  outDir ??= join(process.cwd(), 'bundle', basename(interfaceSrc).replace(/\.Interface\.compact$/, ''));
+
+  let r;
+  try {
+    r = deployCheck({
+      interfaceSrc: resolve(interfaceSrc), interfaceOut: resolve(interfaceOut), fullOut: resolve(fullOut),
+      outDir: resolve(outDir), url: o.url, address: o.address, indexerUrl: o.indexerUrl,
+    });
+  } catch (e) {
+    console.error(`${e instanceof RefusedError ? 'refused' : 'error'}: ${e.message}`);
+    return 1;
+  }
+
+  if (o.json) {
+    console.log(JSON.stringify({
+      ...r, commitment: r.commitment.toString('hex'), payload: r.payload.toString('hex'), parts: r.parts.map((p) => p.toString('hex')), info: undefined,
+    }, null, 2));
+    return 0;
+  }
+  const sample = exampleFileUrl(r.url, 'package.json');
+  console.log(`bundle      : ${r.outDir}`);
+  console.log(`              ${r.files.length} files, ${r.bytes} bytes; ${INDEX_FILE} ${r.indexBytes} bytes, lists ${r.index.files.length}; interface ${r.interfaceRel}`);
+  console.log(`published   : ${r.circuits.join(', ')}`);
+  if (r.verifyOnly.length) {
+    console.log(`verify-only : ${r.verifyOnly.join(', ')} — take${r.verifyOnly.length === 1 ? 's' : ''} a witness (${r.witnesses.join(', ')}): verified at Levels 1-3, not executable by a consumer`);
+  }
+  for (const row of r.rows) console.log(`key ${row.status.padEnd(9)} ${row.circuit}`);
+  const k = r.parts.length;
+  console.log(`url         : ${r.url} (${Buffer.from(r.url, 'utf8').length} bytes; ${k} part${k === 1 ? '' : 's'}, ${MAX_URL_BYTES} bytes fit one)${r.url !== r.requestedUrl ? ` — ${INDEX_FILE} appended to --url` : ''}`);
+  if (sample) console.log(`files at    : paths relative to it, e.g. ${sample}`);
+  console.log(`commitment  : ${r.commitment.toString('hex')}`);
+  console.log(`payload     : ${r.payload.toString('hex')}`);
+  console.log('');
+  if (k === 1) {
+    console.log(`Upload the bundle directory as is, so that the url above serves its ${INDEX_FILE}, then call, once:`);
+    console.log(`  publishBundle(0x${r.payload.toString('hex')})`);
+  } else {
+    console.log(`Upload the bundle directory as is, so that the url above serves its ${INDEX_FILE}, then publish the pointer as`);
+    console.log(`${k} publishBundle calls in ONE guaranteed intent, in this order (the Multi-Part Event rule; e.g. the reference`);
+    console.log('publisher of compact-multi-part-event). A reader merges them into one package; calls split over two intents are two packages:');
+    r.parts.forEach((part, i) => console.log(`  part ${i + 1}/${k}: publishBundle(0x${part.toString('hex')})`));
+  }
+  return 0;
+}
+
+if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
+  process.exit(await main(process.argv.slice(2)));
+}

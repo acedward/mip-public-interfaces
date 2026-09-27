@@ -1,0 +1,141 @@
+{
+  "bundle": "v1",
+  "commitment": "ecmh-jubjub-grouphash",
+  "hash": "9f9cbbf6d09418deb4755167ec49a8866fbc2127b4ec944b322803fd6d3a0ce8",
+  "compiler": {
+    "name": "compactc",
+    "version": "0.34.0"
+  },
+  "files": [
+    {
+      "path": "LICENSE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "size": 11358
+    },
+    {
+      "path": "NOTICE",
+      "sha256": "41d02defe20dbaef339cdb07316ab9febbe9660008e5423f2f21626d9d333814",
+      "size": 2072
+    },
+    {
+      "path": "README.md",
+      "sha256": "8d0e00270d536843782eb57aed700513a0100378b08e5f131f30ad499f75d8e6",
+      "size": 3341
+    },
+    {
+      "path": "SOURCE.md",
+      "sha256": "9e9206fd6a42aa48dcd05b1303fe9e65a57ff199c4c08cdf7f5b48609c3c4eb4",
+      "size": 2476
+    },
+    {
+      "path": "out/compiler/contract-info.json",
+      "sha256": "55931c5ab4a4784d18a36b7419e62c5a9d0cd1b0ff0eb58d2de3017579c7ce58",
+      "size": 4998
+    },
+    {
+      "path": "out/contract/index.d.ts",
+      "sha256": "8e19b1f2de02e051a44defa76f6f6482e76b3a43974ff5077e3b8afa3c24849e",
+      "size": 6108
+    },
+    {
+      "path": "out/contract/index.js",
+      "sha256": "0121fca6c7a5cde34eaee1757cd07ba461019a0bc2911bf1ef6f9bdd8190c0ee",
+      "size": 95599
+    },
+    {
+      "path": "out/contract/package.json",
+      "sha256": "5a065fe7d8eab2a582f428e11c2ea63aaf70607a54f69cfd5c711b5c53d91b32",
+      "size": 21
+    },
+    {
+      "path": "out/keys/decimals.verifier",
+      "sha256": "0f3484a29486ef423c5b397e1bed8cd959769a95f32796683426e2f04054751d",
+      "size": 1351
+    },
+    {
+      "path": "out/keys/mintPiece.verifier",
+      "sha256": "1773587b98b01de99553399e07dda188d721be3d8314c36943705fa6b1d501ae",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/name.verifier",
+      "sha256": "26b983cc7849cc4d70c6d1388734269b82b64366797b67c548b53e52a585e279",
+      "size": 1351
+    },
+    {
+      "path": "out/keys/publishAltairRepository.verifier",
+      "sha256": "36b22aa696a919d9c35c9b18c93432c3f33a7e5350f46046b4e83e6cb4706dec",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/publishBundle.verifier",
+      "sha256": "22be3a18f3e19012658b1f44adfdc814ceba9223f48f88afeb2ffac7f52aac81",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/publishCygnusRepository.verifier",
+      "sha256": "85f14fbcdd5c0ef84c8c558ab156f87371115f932b6d3ab031ab0245ca3d76ff",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/publishLyraRepository.verifier",
+      "sha256": "4d2dc33f5f13c4e4cbffeed22728eb287e0a32839942a02d44aaa2fedaf8131e",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/publishOrionRepository.verifier",
+      "sha256": "e0aec2b433a1dc9a7d6ae7aab32e73914c9b1921e43595f76ac6ac91992c6384",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/publishVegaRepository.verifier",
+      "sha256": "a5bc7ad61192e83522cc02a744d01ed51c6e58fbf76a7e3e48cdee2caa86a4fd",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/symbol.verifier",
+      "sha256": "a66495f5af36658e272ea729e3b4778366f4ab1d332a46036da74acf0c490946",
+      "size": 1351
+    },
+    {
+      "path": "out/keys/tokenColor.verifier",
+      "sha256": "86f2ec5e74f8e5824b8851cfd966d1cc16e10751dc3f152e14e1729bb6f7f509",
+      "size": 2119
+    },
+    {
+      "path": "package.json",
+      "sha256": "d242fb84a10fa3a92001b0d1948e1fa8265104a802f622d6be0cd18a75120718",
+      "size": 327
+    },
+    {
+      "path": "src/OffChainInterface.compact",
+      "sha256": "c9aaba4de48b17ac3c532e296a223da95836e5ad0d3f0e83f5d15f35cfc94f88",
+      "size": 2100
+    },
+    {
+      "path": "src/TokenMetadata.compact",
+      "sha256": "7d16b4da4209f48815da07950513bbd58b2f14d795db8fe54f7fd2d5b7fb5847",
+      "size": 12617
+    },
+    {
+      "path": "src/generated/CNSTPI.compact",
+      "sha256": "0a5ccfc1232eee712928193fb68e5d2266a05979bceb6f927105eb352041ae50",
+      "size": 7702
+    },
+    {
+      "path": "src/vendor/openzeppelin/token/NativeShieldedTokenCore.compact",
+      "sha256": "1edaac1a5f4a53cf102c78216272852633afd55e3cd8bf9ab146f62e679f33a6",
+      "size": 15286
+    },
+    {
+      "path": "src/vendor/openzeppelin/token/NativeShieldedTokenFamily.compact",
+      "sha256": "9044376825f40799dd8af4fc863253111bb4842f90b308e10e448ff1e333848e",
+      "size": 13695
+    },
+    {
+      "path": "src/vendor/openzeppelin/utils/Utils.compact",
+      "sha256": "215d6374bb22a7c950bb43d046f6380f2c432fb841a2fcead2a35766d159f314",
+      "size": 8335
+    }
+  ]
+}

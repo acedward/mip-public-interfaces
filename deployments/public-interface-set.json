@@ -1,0 +1,40 @@
+{
+  "$comment": "The PI rows of spec 00024 §6.B (project 00024-02): which rows of deployments/reference-set.json this repository generates as public-interface-only contracts, the base each is built on, and where its bundle is served. scripts/generate-pi-contracts.ts reads it (with reference-set.json) and writes contracts/generated/<ID>.compact and deployments/generated-matrix.json. Every PI contract: the emitter secret (constructor stores its hash; every emitting circuit checks it), `publishBundle(payload)` behind the secret, and ONE kind of MIP-0018 declaration only — `repository` (the URL of its own source on `main`), one per token (CNSTPI: one per piece). Its interface is FULL: the whole contract source is the published interface (the public-interface open form), so the contract exports impure circuits only (spec Q9: pure circuits cannot be verified). Bundle URLs are `bundleBase` + `bundlePath` + `index.json`; `bundleBase` is the local stack's static server as the compose network names it (`http://bundles/`, resources/00024-local-stack) — a bundle's bytes (its README) depend on its URL, so the URL is fixed here, not at deploy time. UPROMPI's path is long on purpose: its index.json URL is longer than the 224 bytes one `publishBundle` event holds, so its pointer is a 2-part Multi-Part Event package published in ONE guaranteed intent (spec FR-019, sub-plan 02-B3).",
+  "variant": { "suffix": "PI", "label": "PI" },
+  "repositoryBlob": "https://github.com/acedward/mip-public-interfaces/blob/main/contracts/generated",
+  "bundleBase": "http://bundles/",
+  "rows": [
+    {
+      "base": "LSUN",
+      "template": "FungibleToken",
+      "module": "token/FungibleToken",
+      "interface": "FULL",
+      "covers": "open form on a ledger token (OpenZeppelin FungibleToken)",
+      "bundlePath": "LSUNPI/"
+    },
+    {
+      "base": "SSTAR",
+      "template": "NativeShieldedToken",
+      "module": "token/NativeShieldedToken",
+      "interface": "FULL",
+      "covers": "open form on a native shielded token (OpenZeppelin NativeShieldedToken)",
+      "bundlePath": "SSTARPI/"
+    },
+    {
+      "base": "CNST",
+      "template": "NativeShieldedTokenFamily",
+      "module": "token/NativeShieldedTokenFamily",
+      "interface": "FULL",
+      "covers": "open form on a collection: one address, one domain separator per piece (OpenZeppelin NativeShieldedTokenFamily)",
+      "bundlePath": "CNSTPI/"
+    },
+    {
+      "base": "UPROM",
+      "template": "NativeUnshieldedToken",
+      "module": null,
+      "interface": "FULL",
+      "covers": "open form on a native unshielded token (own template: OpenZeppelin has no native unshielded module); its index.json URL is longer than 224 bytes, so its pointer is a 2-part publishBundle package in one guaranteed intent",
+      "bundlePath": "UPROMPI/an-interface-bundle-whose-index-json-url-is-longer-than-the-224-bytes-one-publishBundle-event-holds/so-the-contract-publishes-its-pointer-as-a-two-part-multi-part-event-package/in-one-guaranteed-intent/"
+    }
+  ]
+}

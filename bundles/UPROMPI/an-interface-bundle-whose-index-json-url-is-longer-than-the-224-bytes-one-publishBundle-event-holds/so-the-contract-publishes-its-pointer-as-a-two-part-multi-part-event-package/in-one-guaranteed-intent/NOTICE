@@ -1,0 +1,12 @@
+UPROMPI public-interface bundle — https://github.com/acedward/mip-public-interfaces
+Licensed under the Apache License, Version 2.0 (LICENSE), except the files named below.
+Every file under src/ is listed with its origin, commit and SHA-256 in SOURCE.md.
+
+src/OffChainInterface.compact: from https://github.com/acedward/public-interfaces-for-compact-contracts,
+Apache License, Version 2.0, whose NOTICE reads:
+
+    compact-off-chain-circuits
+    Copyright 2026 the compact-off-chain-circuits authors.
+
+src/TokenMetadata.compact: from https://github.com/acedward/mip-0018-midnight-contracts,
+Apache License, Version 2.0.

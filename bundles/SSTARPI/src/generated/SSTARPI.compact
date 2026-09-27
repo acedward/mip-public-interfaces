@@ -1,0 +1,102 @@
+// SPDX-License-Identifier: Apache-2.0
+//
+// GENERATED FILE — do not edit. Produced by scripts/generate-pi-contracts.ts from
+// deployments/reference-set.json row "SSTAR" and deployments/public-interface-set.json,
+// PI variant: SSTARPI (Shielded Star · PI). Source of truth for its `repository` declaration:
+// https://github.com/acedward/mip-public-interfaces/blob/main/contracts/generated/SSTARPI.compact
+//
+// Shielded Star · PI (SSTARPI), 6 decimals, kind byte 1; built on OpenZeppelin Compact
+// Contracts v0.4.0-alpha.3 `NativeShieldedToken` (vendored,
+// contracts/vendor/openzeppelin/).
+// Covers: open form on a native shielded token (OpenZeppelin NativeShieldedToken).
+//
+// PUBLIC INTERFACE: FULL. This whole file, with the modules it imports, IS the contract's
+// published interface (the Public Interfaces draft's open form): every circuit below is
+// impure — a ledger read, a mint or transfer, or an emitting circuit — and each has a
+// verifier key on chain that Level 2 compares; there is no pure circuit (it could not be
+// verified). The emitting circuits take the emitter secret (a witness), so a consumer
+// verifies them at Levels 1-3 but cannot execute them.
+//
+// Who may emit: only the holder of the secret whose hash the constructor stores (spec 00024
+// Q12). MIP-0018: `repository` is the only key this contract declares.
+//
+// Constructor arguments: `emitterSecretHash` (`TM_emitterSecretHashOf(secret)`, computed off chain), `name_`, `symbol_`.
+// Circuits the deployment calls, in order:
+//   publishRepository
+//   mint
+//   publishBundle (1 part, one guaranteed intent)
+
+pragma language_version >= 0.26.0;
+
+import CompactStandardLibrary;
+import "../TokenMetadata" prefix TM_;
+import "../OffChainInterface" prefix OCI_;
+import "../vendor/openzeppelin/token/NativeShieldedToken" prefix Token_;
+
+export { ContractAddress, Either, Maybe, ShieldedCoinInfo, ZswapCoinPublicKey, TM_emitterSecretHash };
+
+/**
+ * @param {Bytes<32>} emitterSecretHash - `TM_emitterSecretHashOf(secret)`, computed off chain;
+ *   every emitting circuit proves knowledge of `secret` through the `emitterSecret` witness.
+ * @param {Opaque<"string">} name_ - The token's name (a Compact string literal is not an Opaque<"string">).
+ * @param {Opaque<"string">} symbol_ - The token's symbol.
+ */
+constructor(emitterSecretHash: Bytes<32>, name_: Opaque<"string">, symbol_: Opaque<"string">) {
+  TM_initializeEmitter(emitterSecretHash);
+  Token_initialize(pad(32, "umbra:sstarpi"), name_, symbol_, 6);
+}
+
+export circuit name(): Opaque<"string"> {
+  return Token_name();
+}
+
+export circuit symbol(): Opaque<"string"> {
+  return Token_symbol();
+}
+
+export circuit decimals(): Uint<8> {
+  return Token_decimals();
+}
+
+/** The domain separator this contract mints and describes under (read from its ledger). */
+export circuit domainSep(): Bytes<32> {
+  return Token__domain;
+}
+
+/** The token's colour: `tokenType(domainSep, this contract)`. */
+export circuit tokenColor(): Bytes<32> {
+  return Token_tokenColor();
+}
+
+/**
+ * @description Mints `amount` to `recipient`, a Zswap coin public key (OpenZeppelin
+ * 0.4.0-alpha.3, #833). Deliberately open: a reference test token.
+ * @param {Bytes<32>} nonce - Caller-supplied and unique per mint.
+ */
+export circuit mint(recipient: ZswapCoinPublicKey, amount: Uint<64>, nonce: Bytes<32>): ShieldedCoinInfo {
+  return Token__mint(disclose(recipient), disclose(amount), disclose(nonce));
+}
+
+/**
+ * @description MIP-0018: declares `repository` — the URL of this contract's
+ * own source on `main` (val-type 4 URI). One declaration, one TokenMetadata event, every
+ * byte a compile-time literal. Emitter only.
+ */
+export circuit publishRepository(): [] {
+  TM_assertEmitter();
+  // repository = "https://github.com/acedward/mip-public-interfaces/blob/main/contracts/generated/SSTARPI.compact" (val-type 4 URI, val-len 95)
+  TM_emitTokenMetadata(pad(32, "umbra:sstarpi"), 1, pad(32, "repository"), 4, 95, pad(188, "https://github.com/acedward/mip-public-interfaces/blob/main/contracts/generated/SSTARPI.compact"));
+}
+
+/**
+ * @description Public Interfaces: emits ONE part of this contract's interface pointer —
+ * the `Misc` event `mip-xxxx:public-interface[v1]` whose payload is a 256-byte part of
+ * `commitment ++ utf8(index.json URL)`, zero padded to 256·k bytes. A pointer of k > 1
+ * parts is k calls in ONE guaranteed intent, in order (the Multi-Part Event rule). The
+ * circuit writes no ledger state, so every part runs from the same state. Emitter only.
+ * @param {Bytes<256>} payload - One 256-byte part of the pointer.
+ */
+export circuit publishBundle(payload: Bytes<256>): [] {
+  TM_assertEmitter();
+  OCI_publishBundle(payload);
+}

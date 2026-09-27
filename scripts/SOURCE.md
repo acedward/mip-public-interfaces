@@ -1,0 +1,18 @@
+# scripts/ — sources of the on-chain scripts
+
+The local-chain deploy-and-publish scripts (task 02-B4 of project 00024-02) reuse the deploy
+pattern of [`acedward/mip-0018-midnight-contracts`](https://github.com/acedward/mip-0018-midnight-contracts)
+at `cb6c675ddbbb4a82d0bcaf87ad863c934becce31` (branch `feat/00024-01-mip-0018`, project 00024-01
+task A6b): the `MN_*` network profile, secrets from mode-600 files, one circuit call per
+transaction, a resumable deployment record, and the staged deploy of spec 00024 Q20 (a).
+
+| This file | Source @ `cb6c675` (git blob) | SHA-256 of the source | Changes |
+|---|---|---|---|
+| `staged-deploy.ts` | `scripts/staged-deploy.ts` (`20820f93a4a24de2f0329c86ee5487e3f0df20aa`) | `519cc09d7e319a4a96e3d2dfa6986725e53e3ac7f825f4909d9d4be581ccc563` | **none** (byte-identical copy) |
+| `profile.ts` | `scripts/profile.ts` (`acd4f465033de96b1509d9ba7ab266f88623e032`) | `50cbbd313e39cf622c162b0a4fc8ee988cea4a6b9b876d7d13fdcbf930147005` | adapted: the OpenZeppelin FungibleToken account secret (`MN_FUNGIBLE_SK_FILE`, witness `wit_FungibleTokenSK`), the PI set's witness table, the event names, `pointerParts` (UC-2 payload), `holderBytes` / `accountIdOf` (as `scripts/simulate-pi.ts`) |
+| `deploy-lib.ts` | the deploy / staged-deploy / find part of `scripts/deploy-and-publish.ts` (`50fa2b67578b53875c8b10d7a54b7aedf4bb203e`) | `d522ba9cc9089477317d465edcf5802c251c30c074c4bedb3d00634f2107c12c` | extracted into a module shared by `deploy-and-publish.ts` and `publish-pointer.ts`; the record gains `row` / `instance` / `publications` |
+| `deploy-and-publish.ts` | the plan loop of the same file | (same) | the PI plans (repository declaration, ledger / shielded mints, OZ transfer) and the pointer through the Multi-Part Event publisher |
+| `stranger-check.ts` | `scripts/stranger-check.ts` (`3c4eb349ad1d28d318020e66dc4121eb1f568805`) | `709dab9cd3956a76ad81ca2e674d22dcc65e4b110d00f38e6273285f49cfbfcb` | the PI set's emitting circuits incl. `publishBundle`; a multi-part pointer also through the publisher |
+| `compile.sh` | `scripts/compile.sh` (`ef5bb6a83992b1cd5d2bafffa560637f96c06abc`) | `62caa8cf29abcb213d8b00cd53a0deb0ce0cfd05049564d6a964663c934e0ad2` | adapted: this repository's contract list (the probe + the PI set, paths under `contracts/`); compiles from the repository root with a RELATIVE source path so no checkout path reaches the committed source maps, and roots the map at the repository (`SOURCE_ROOT`); `--check` also skips `index.js`, its map and `contract-manifest.json` (a `--skip-zk` build embeds no key hashes); no `ZKIR_V3` switch; messages shortened |
+| `chain.ts` | new | — | the wallet / providers session and the vendored Multi-Part Event publisher (`vendor/compact-multi-part-event`, [Y] `f2425f2`) wired to a live chain: an indexer state source (the queries of [Y]'s `src/indexer` `indexerStateSource`, not vendored), the proof server through midnight-js's proof provider, the wallet as balancer and submitter |
+| `publish-pointer.ts` | new | — | further pointers / extra instances in one wallet session (project 00024-02-D fixtures) |

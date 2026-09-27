@@ -1,0 +1,8 @@
+{
+  "version": 3,
+  "file": "index.js",
+  "sourceRoot": "../../../../",
+  "sources": ["contracts/probe/PublicInterfaceProbe.compact", "contracts/probe/../TokenMetadata.compact", "compiler/zkir-v3-library.compact", "contracts/probe/../OffChainInterface.compact"],
+  "names": [],
+  "mappings": ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;EA0BA;;;;;;;;;;;;;MAKA,MAAA,mBAEC;;OAAA;MAGD,AAAA,aAGC;;;;;cAH4B,SAAmB;;;;;;;;;;;;;;;;;;yCAAnB,SAAmB;;;;;;;;;qDAAnB,SAAmB;;;;OAG/C;;;;GAXA;EAFD;;;;;UAAY,mBAA4B;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;ICwGtC;;;;;;;;;yEAAkD;;;oCDvG7B,mBAAiB;;;;;;;GACvC;EE5BD,AAAA,kBAAA;oEAAA;;;EDwIE,AAAA,gBAAmC;;0DAAnC,aAAmC;;;;;;;;;;;;;;GAAA;EAanC,AAAA,sBAEC,CAFuC,QAAiB;;mCACoB,QAAM;GAClF;EAGD,AAAA,0BAGC,4BAHgC,MAAe;2CACvC,MAAI;;IACX;;;;;;;2HAA6B,MAAI;;yEAAhB;;GAClB;EAMD,AAAA,sBAGC;;;kEAFgD;;;;;;;;;;;uIAAiB;;;GAEjE;EE9HD,AAAA,sBAEC,4BAF4B,SAAmB;QAC9C,GAAyF;;;;;;;;;;;sUAAX,SAAO;2VAArF,GAAyF;;2VAAzF,GAAyF;;;;;;;GAC1F;EHXH,AAAA,sBAEC,CAFuC,QAAiB;uCACzB,QAAM;GACrC;EAGD,AAAA,sBAGC,4BAH4B,SAAmB;;2DAE5B,SAAO;;GAC1B;;;;;;;;;;;;;;;;;;;;;;;;IC2FC;qCAAA;;;;;;;;;;;0GAAkD;KAAA;;;;;;;;EDnGpD,AAAA,mBAEC;;;;UAFuC,QAAiB;;;;;;;;iDAAjB,QAAiB;GAExD;;;;;;;;"
+}
