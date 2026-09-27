@@ -6,9 +6,9 @@
 // event. Runs the compiled contracts (contracts/managed/<ID>/) in the Compact simulator.
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -177,6 +177,24 @@ async function deployed(id: string, privateState = PRIVATE) {
   const row = rowOf(id);
   return deploy(new Contract(witnessesFor(id)), privateState, [emitterSecretHashOf(TEST_EMITTER_SECRET), row.constructorArgs.name_, row.constructorArgs.symbol_]);
 }
+
+describe('the committed source maps (contracts/managed/<name>/contract/index.js.map)', () => {
+  // Audit 02 E2-C5: scripts/compile.sh compiles from the repository root with relative source paths,
+  // so each map's sourceRoot must lead from its own directory back to the repository root.
+  const managed = readdirSync(join(ROOT, 'contracts', 'managed'));
+  it.each(managed)('%s: every source the map names (except the compiler\'s built-ins) is a file of this repository', (name) => {
+    const mapDir = join(ROOT, 'contracts', 'managed', name, 'contract');
+    const map = JSON.parse(readFileSync(join(mapDir, 'index.js.map'), 'utf8')) as { sourceRoot?: string; sources: string[] };
+    const own = map.sources.filter((src) => !src.startsWith('compiler/'));
+    expect(own.length).toBeGreaterThan(0);
+    for (const src of own) {
+      expect(src.startsWith('/'), `${src} is an absolute path`).toBe(false);
+      const file = resolve(mapDir, map.sourceRoot ?? '', src);
+      expect(file.startsWith(`${ROOT}/contracts/`), `${src} -> ${file}`).toBe(true);
+      expect(existsSync(file), `${src} -> ${file}`).toBe(true);
+    }
+  });
+});
 
 describe('in the simulator: the emitter secret, the repository declaration, publishBundle', () => {
   it.each(IDS)('%s: every repository circuit emits exactly its planned 256-byte package', async (id) => {

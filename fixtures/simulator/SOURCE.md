@@ -38,10 +38,10 @@ Compiled artefacts (every committed file of `contracts/managed/<ID>/`, as one di
 
 | Directory | Digest |
 | --- | --- |
-| `contracts/managed/LSUNPI/` | `e0a9a3ab9139615d5b4f402616704cf1b93c34c6e354d584943f68069d3ccc97` |
-| `contracts/managed/SSTARPI/` | `8a9c0d5299368567d6ab9a8c3efd744655155e15ca0be272a2be965c7538f16c` |
-| `contracts/managed/CNSTPI/` | `ef8094c7525a2969f7cbe3352617cb05c730a528e0c4bca257939d145897603a` |
-| `contracts/managed/UPROMPI/` | `14e45224c3c0cb112922aef36ac9b3f8b29dc523122450146bba44321b2ae1dc` |
+| `contracts/managed/LSUNPI/` | `c7eeed79327267a9b0cb4bf48e39b3edc780c6db565a75131167c7a3616c2771` |
+| `contracts/managed/SSTARPI/` | `73527cc8174d2cfe9f3e19c6f3193ec14101aec04df47f3131cba77c00c79598` |
+| `contracts/managed/CNSTPI/` | `69706c4cde74be551a83cde51406abe8c4a6c9ba4fe9e17e2df2dfb68dddf1fe` |
+| `contracts/managed/UPROMPI/` | `bab10f38c7f7d1c2202bc919f465a8e46951c4bc9a1ed886545aa9d30d6feb2c` |
 
 ## Outputs (SHA-256)
 

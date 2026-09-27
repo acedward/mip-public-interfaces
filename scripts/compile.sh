@@ -44,9 +44,10 @@ done
 if [ "${#SELECTED[@]}" -gt 0 ]; then CONTRACTS=("${SELECTED[@]}"); fi
 
 compiler() { compact compile "+$COMPACT_VERSION" "$@"; }
-# The generated source map records the path from the target directory back to the
-# sources; this is the value a compile into contracts/managed/<name>/ produces.
-SOURCE_ROOT='../../../'
+# The generated source map (contracts/managed/<name>/contract/index.js.map) lists each source by
+# the RELATIVE path it was compiled with (contracts/..., see below), so its sourceRoot must lead
+# from that map's directory back to the repository root: four levels up.
+SOURCE_ROOT='../../../../'
 
 echo "== compactc $(compiler --version) (language $(compiler --language-version), runtime $(compiler --runtime-version))"
 FLAGS=()
