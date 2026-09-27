@@ -30,6 +30,12 @@ CONTRACTS=(
   "generated/SSTARPI"
   "generated/CNSTPI"
   "generated/UPROMPI"
+  # The DU set (spec 00024 §6.B, project 00024-03), written by scripts/generate-du-contracts.ts:
+  # MIP-0018 metadata + a HIDDEN public interface. Same key-generation cost profile.
+  "generated/SNEBDU"
+  "generated/LMOONDU"
+  "generated/UMETDU"
+  "generated/DAURDU"
 )
 
 CHECK=0

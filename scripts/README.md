@@ -1,12 +1,13 @@
 # scripts/
 
 The generator, compile, bundle and fixture scripts of the contract sets, on the layout of
-`acedward/mip-0018-midnight-contracts` (project 00024-02, phase 02-B). TypeScript runs with
+`acedward/mip-0018-midnight-contracts` (project 00024-02, phase 02-B; the DU set: project 00024-03, phase 03-A). TypeScript runs with
 `node --import tsx`; the tests use the same entry points.
 
 | Script | What |
 |---|---|
 | `generate-pi-contracts.ts` | writes `contracts/generated/<ID>.compact` and `deployments/generated-matrix.json` from `deployments/reference-set.json` + `deployments/public-interface-set.json` (`--out <dir>` writes elsewhere) |
+| `generate-du-contracts.ts` | writes the DU set — `contracts/generated/{SNEBDU,LMOONDU,UMETDU,DAURDU}.compact` and `deployments/dual-matrix.json` — from `deployments/reference-set.json` + `deployments/dual-set.json`: each MIP-18 twin's full MIP-0018 metadata (ported from `acedward/mip-0018-midnight-contracts`' literal generator, `SOURCE.md`), the emitter secret, `publishBundle`, the PI templates' token surface and one pure getter (`--out <dir>` writes elsewhere) |
 | `compile.sh` | `compact compile +0.34.0`, one contract at a time, into `contracts/managed/<name>/` (`--check`: compare with a fresh `--skip-zk` compile) |
 | `bundle.ts` | `public-interface-deploy-check` (patched, `tools/public-interface/`) for every PI contract: `bundles/<path>/` + `deployments/bundles.json`; `--mirror <dir>` also copies each bundle to `<dir>/<path>` (the local stack's `bundles/`) |
 | `simulate-pi.ts` | runs a contract's plan in the Compact simulator (constructor, verifier keys, every step, the `publishBundle` parts): the state and event-payload inputs of `public-interface-verify`; CLI writes `out/sim/<ID>/` |

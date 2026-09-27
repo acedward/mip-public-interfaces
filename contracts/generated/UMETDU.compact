@@ -1,0 +1,166 @@
+// SPDX-License-Identifier: Apache-2.0
+//
+// GENERATED FILE — do not edit. Produced by scripts/generate-du-contracts.ts from
+// deployments/reference-set.json row "UMET" and deployments/dual-set.json,
+// DU (dual) variant: UMETDU (Unshielded Meteor · DU). Source of truth for its `repository` declaration:
+// https://github.com/acedward/mip-public-interfaces/blob/main/contracts/generated/UMETDU.compact
+//
+// Unshielded Meteor · DU (UMETDU), 2 decimals, kind byte 0; this repository's own native
+// unshielded template (OpenZeppelin has no native unshielded module).
+// Covers: mints before its metadata (observed, then described); a native unshielded token
+// (own template: OpenZeppelin has no native unshielded module).
+//
+// DUAL. MIP-0018: the full metadata of its MIP-18 twin UMET18 (acedward/mip-0018-midnight-contracts),
+// step for step — one declaration per circuit call (one intent, one package), every byte a
+// compile-time literal, a value longer than 188 bytes emitted as all of its parts by one call.
+// PUBLIC INTERFACE: HIDDEN — the published interface is contracts/interfaces/UMETDU.Interface.compact
+// (the Public Interfaces draft's private form: this contract's ledger declared slot by slot
+// under hidden names, no module imported, the code of every impure circuit). The pure
+// constant getter below is not published (a pure circuit has no verifier key on chain).
+//
+// Who may emit: only the holder of the secret whose hash the constructor stores (spec 00024
+// Q12) — every declaration circuit and publishBundle check it first.
+//
+// Constructor arguments: `emitterSecretHash` (`TM_emitterSecretHashOf(secret)`, computed off chain), `name_`, `symbol_`.
+// Circuits the deployment calls, in order:
+//   mint
+//   mint
+//   mint
+//   publishName (name, 1 event)
+//   publishSymbol (symbol, 1 event)
+//   publishDecimals (decimals, 1 event)
+//   publishRepository (repository, 1 event)
+//   publishBundle (1 part, one guaranteed intent)
+
+pragma language_version >= 0.26.0;
+
+import CompactStandardLibrary;
+import "../TokenMetadata" prefix TM_;
+import "../OffChainInterface" prefix OCI_;
+
+export { ContractAddress, Either, Maybe, UserAddress, TM_emitterSecretHash };
+
+// The same ledger shape as OpenZeppelin's token modules (name, symbol and decimals sealed
+// at construction), so every DU contract answers the same reads.
+export sealed ledger _name: Opaque<"string">;
+export sealed ledger _symbol: Opaque<"string">;
+export sealed ledger _decimals: Uint<8>;
+/** Domain separator fixed at construction; with the address it is the colour. */
+export sealed ledger _domain: Bytes<32>;
+/** How many mints this contract has made. */
+export ledger _mints: Counter;
+
+/**
+ * @param {Bytes<32>} emitterSecretHash - `TM_emitterSecretHashOf(secret)`, computed off chain;
+ *   every emitting circuit proves knowledge of `secret` through the `emitterSecret` witness.
+ * @param {Opaque<"string">} name_ - The token's name (a Compact string literal is not an Opaque<"string">).
+ * @param {Opaque<"string">} symbol_ - The token's symbol.
+ */
+constructor(emitterSecretHash: Bytes<32>, name_: Opaque<"string">, symbol_: Opaque<"string">) {
+  TM_initializeEmitter(emitterSecretHash);
+  _name = disclose(name_);
+  _symbol = disclose(symbol_);
+  _decimals = 2;
+  _domain = pad(32, "umbra:umetdu");
+}
+
+export circuit name(): Opaque<"string"> {
+  return _name;
+}
+
+export circuit symbol(): Opaque<"string"> {
+  return _symbol;
+}
+
+export circuit decimals(): Uint<8> {
+  return _decimals;
+}
+
+/**
+ * The kind byte this contract declares (MIP section 3). PURE: a constant, no verifier key on
+ * chain — so the HIDDEN interface does not publish it (spec Q9).
+ */
+export circuit kind(): Uint<8> {
+  return 0;
+}
+
+/** The domain separator this contract mints and describes under (read from its ledger). */
+export circuit domainSep(): Bytes<32> {
+  return _domain;
+}
+
+/** The token's colour: `tokenType(domainSep, this contract)`. */
+export circuit tokenColor(): Bytes<32> {
+  return tokenType(_domain, kernel.self());
+}
+
+export circuit mints(): Uint<64> {
+  return _mints.read() as Uint<64>;
+}
+
+/**
+ * @description Mints `amount` of this token to `recipient` as an unshielded UTxO.
+ * Deliberately open: a reference test token.
+ * @return {Bytes<32>} - The colour actually minted.
+ */
+export circuit mint(recipient: Either<ContractAddress, UserAddress>, amount: Uint<64>): Bytes<32> {
+  assert(amount > 0, "amount must be positive");
+  _mints.increment(1);
+  return mintUnshieldedToken(_domain, disclose(amount), disclose(recipient));
+}
+
+/**
+ * @description MIP-0018 (publishMetadata): ONE declaration, one TokenMetadata event, every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit publishName(): [] {
+  TM_assertEmitter();
+  // name = "Unshielded Meteor · DU" (val-type 1 string, val-len 23)
+  TM_emitTokenMetadata(pad(32, "umbra:umetdu"), 0, pad(32, "name"), 1, 23, Bytes[
+    0x55, 0x6e, 0x73, 0x68, 0x69, 0x65, 0x6c, 0x64, 0x65, 0x64, 0x20, 0x4d,
+    0x65, 0x74, 0x65, 0x6f, 0x72, 0x20, 0xc2, 0xb7, 0x20, 0x44, 0x55, ...pad(165, "")
+  ]);
+}
+
+/**
+ * @description MIP-0018 (publishMetadata): ONE declaration, one TokenMetadata event, every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit publishSymbol(): [] {
+  TM_assertEmitter();
+  // symbol = "UMETDU" (val-type 1 string, val-len 6)
+  TM_emitTokenMetadata(pad(32, "umbra:umetdu"), 0, pad(32, "symbol"), 1, 6, pad(188, "UMETDU"));
+}
+
+/**
+ * @description MIP-0018 (publishMetadata): ONE declaration, one TokenMetadata event, every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit publishDecimals(): [] {
+  TM_assertEmitter();
+  // decimals = "2" (val-type 2 integer, val-len 16)
+  TM_emitTokenMetadata(pad(32, "umbra:umetdu"), 0, pad(32, "decimals"), 2, 16, Bytes[0x02, ...pad(187, "")]);
+}
+
+/**
+ * @description MIP-0018 (publishRepository): ONE declaration, one TokenMetadata event, every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit publishRepository(): [] {
+  TM_assertEmitter();
+  // repository = "https://github.com/acedward/mip-public-interfaces/blob/main/contracts/generated/UMETDU.compact" (val-type 4 URI, val-len 94)
+  TM_emitTokenMetadata(pad(32, "umbra:umetdu"), 0, pad(32, "repository"), 4, 94, pad(188, "https://github.com/acedward/mip-public-interfaces/blob/main/contracts/generated/UMETDU.compact"));
+}
+
+/**
+ * @description Public Interfaces: emits ONE part of this contract's interface pointer —
+ * the `Misc` event `mip-xxxx:public-interface[v1]` whose payload is a 256-byte part of
+ * `commitment ++ utf8(index.json URL)`, zero padded to 256·k bytes. A pointer of k > 1
+ * parts is k calls in ONE guaranteed intent, in order (the Multi-Part Event rule). The
+ * circuit writes no ledger state, so every part runs from the same state. Emitter only.
+ * @param {Bytes<256>} payload - One 256-byte part of the pointer.
+ */
+export circuit publishBundle(payload: Bytes<256>): [] {
+  TM_assertEmitter();
+  OCI_publishBundle(payload);
+}

@@ -89,9 +89,9 @@ describe('the generator (scripts/generate-pi-contracts.ts)', () => {
   });
   afterAll(() => rmSync(out, { recursive: true, force: true }));
 
-  it('writes exactly the four PI contracts', () => {
+  it('writes exactly the four PI contracts (contracts/generated/ also holds the DU set, test/dual.test.ts)', () => {
     expect(readdirSync(join(out, 'contracts', 'generated')).sort()).toEqual(IDS.map((id) => `${id}.compact`).sort());
-    expect(readdirSync(GENERATED).sort()).toEqual(IDS.map((id) => `${id}.compact`).sort());
+    expect(readdirSync(GENERATED).filter((f) => f.endsWith('PI.compact')).sort()).toEqual(IDS.map((id) => `${id}.compact`).sort());
   });
 
   it.each(IDS)('%s.compact is exactly what the generator writes (never edited by hand)', (id) => {
