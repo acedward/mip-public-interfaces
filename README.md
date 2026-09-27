@@ -126,6 +126,14 @@ deployed contract's. A DU bundle ships only `src/<ID>.Interface.compact` (no mod
 the contract), one verifier key per published circuit, and LICENSE / NOTICE / SOURCE.md naming
 every origin of the adapted code.
 
+**P4 — two packages of two names in one intent.** `scripts/dual-intent.ts` builds ONE
+transaction whose ONE guaranteed intent holds UMETDU's `publishRepository` declaration (a
+`mip-0018:token-metadata[v1]` package) and its `publishBundle` pointer (a
+`mip-xxxx:public-interface[v1]` package): equal transaction, address and segment, distinct names —
+a reader that groups by name reads two packages, each for its own protocol.
+`test/p4-dual-intent.test.ts` applies it to an in-process ledger and reads it back with the
+Multi-Part Event reader.
+
 ## Toolchain
 
 | Piece | Version |
