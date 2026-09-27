@@ -1,0 +1,13 @@
+UMETDU public-interface bundle — https://github.com/acedward/mip-public-interfaces
+Licensed under the Apache License, Version 2.0 (LICENSE), except the adapted code named below.
+Every file under src/ is listed with its origin, commit and SHA-256 in SOURCE.md.
+
+src/UMETDU.Interface.compact is a HIDDEN interface: it imports no module; its local circuits are adapted from
+- contracts/OffChainInterface.compact of https://github.com/acedward/public-interfaces-for-compact-contracts
+  (1cf947786d55739ec4e89aef9258ebef0d8687fa), Apache License, Version 2.0, whose NOTICE reads:
+
+    compact-off-chain-circuits
+    Copyright 2026 the compact-off-chain-circuits authors.
+
+- contracts/TokenMetadata.compact of https://github.com/acedward/mip-0018-midnight-contracts (cb6c675ddbbb4a82d0bcaf87ad863c934becce31),
+  Apache License, Version 2.0;

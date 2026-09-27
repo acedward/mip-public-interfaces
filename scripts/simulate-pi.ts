@@ -1,5 +1,6 @@
 /**
- * Run a PI contract's deployment plan (deployments/generated-matrix.json) in the Compact
+ * Run a PI contract's deployment plan (deployments/generated-matrix.json) — or a DU contract's
+ * (deployments/dual-matrix.json, project 00024-03) — in the Compact
  * simulator (@midnight-ntwrk/compact-runtime 0.19.0): the constructor, the verifier keys a
  * deploy installs, then every step — `repository` declarations, mints and transfers, and
  * the `publishBundle` parts of deployments/bundles.json. Returns every event and the final
@@ -70,7 +71,12 @@ export interface MatrixRow {
 }
 export interface BundleRecord { id: string; url: string; parts: number; commitment: string; payloadHex: string; partsHex: string[]; path: string }
 
+/** The PI set's plan (deployments/generated-matrix.json). */
 export const readMatrix = (): { rows: MatrixRow[] } => JSON.parse(readFileSync(path.join(ROOT, 'deployments', 'generated-matrix.json'), 'utf8'));
+/** The DU set's plan (deployments/dual-matrix.json, scripts/generate-du-contracts.ts). */
+export const readDualMatrix = (): { rows: MatrixRow[] } => JSON.parse(readFileSync(path.join(ROOT, 'deployments', 'dual-matrix.json'), 'utf8'));
+/** Every row of both plans: the PI set, then the DU set. */
+export const readAllRows = (): MatrixRow[] => [...readMatrix().rows, ...readDualMatrix().rows];
 export const readBundles = (): { bundles: BundleRecord[] } => JSON.parse(readFileSync(path.join(ROOT, 'deployments', 'bundles.json'), 'utf8'));
 
 export interface SimEvent {
@@ -93,7 +99,7 @@ const WITNESSES = {
 const either = (left: Uint8Array) => ({ is_left: true, left, right: { bytes: new Uint8Array(32) } });
 
 /** The circuit arguments of one plan step. */
-function argsFor(row: MatrixRow, step: Step, bundle: BundleRecord | undefined, part: number): unknown[] {
+export function argsFor(row: MatrixRow, step: Step, bundle: BundleRecord | undefined, part: number): unknown[] {
   switch (step.kind) {
     case 'emit':
       return [];
@@ -105,6 +111,9 @@ function argsFor(row: MatrixRow, step: Step, bundle: BundleRecord | undefined, p
     case 'transfer':
       return [either(holderBytes(step.to ?? '')), BigInt(step.amount ?? '0')];
     case 'mint': {
+      // An unshielded mint (the DU set's UMETDU `mint`, DAURDU `mintUnshielded`): recipient
+      // `Either<ContractAddress, UserAddress>`, the plan's label as a user address.
+      if (step.token === 'unshielded') return [{ is_left: false, left: { bytes: new Uint8Array(32) }, right: { bytes: holderBytes(step.to ?? '') } }, BigInt(step.amount ?? '0')];
       const recipient = step.to === 'owner' ? accountIdOf(TEST_OWNER_SK) : holderBytes(step.to ?? '');
       if (step.token === 'ledger') return [either(recipient), BigInt(step.amount ?? '0')];
       const nonce = pad(32, step.nonce ?? '');
@@ -114,7 +123,7 @@ function argsFor(row: MatrixRow, step: Step, bundle: BundleRecord | undefined, p
         return [unhex(domainSep), { bytes: recipient }, nonce];
       }
       if (step.token === 'shielded') return [{ bytes: recipient }, BigInt(step.amount ?? '0'), nonce];
-      throw new Error(`${row.id}: an unshielded mint step is not in the reference plan`);
+      throw new Error(`${row.id}: unknown mint step`);
     }
     default:
       throw new Error(`${row.id}: unknown step kind`);
@@ -150,7 +159,7 @@ export interface Simulation {
  * secret (the constructor always stores the TEST secret's hash).
  */
 export async function simulatePi(id: string, { withBundle = true, secret = TEST_EMITTER_SECRET } = {}): Promise<Simulation> {
-  const row = readMatrix().rows.find((r) => r.id === id);
+  const row = readAllRows().find((r) => r.id === id);
   if (!row) throw new Error(`no matrix row ${id}`);
   const managed = path.join(ROOT, 'contracts', 'managed', id);
   const info = JSON.parse(readFileSync(path.join(managed, 'compiler', 'contract-info.json'), 'utf8')) as { witnesses: { name: string }[] };
@@ -186,6 +195,9 @@ export async function simulatePi(id: string, { withBundle = true, secret = TEST_
   for (const [index, step] of row.steps.entries()) {
     if (step.kind === 'publishBundle' && !withBundle) break;
     const calls = step.kind === 'publishBundle' ? (bundle?.parts ?? 0) : 1;
+    // Every event of one step (a publishBundle step's calls, or ONE declaration call that emits
+    // all the parts of a long value) is one part of the step's package, numbered in emission order.
+    const stepEvents: ReturnType<typeof misc>[] = [];
     for (let part = 0; part < calls; part += 1) {
       const ctx = rt.createCircuitContext(step.circuit, address, COIN_PK, state.data, privateState);
       const circuit = contract.impureCircuits[step.circuit];
@@ -193,17 +205,16 @@ export async function simulatePi(id: string, { withBundle = true, secret = TEST_
       const r = await circuit(ctx, ...argsFor(row, step, bundle, part));
       state.data = r.context.callContext.currentQueryContext.state;
       privateState = r.context.callContext.currentPrivateState ?? privateState;
-      for (const e of r.context.events as unknown[]) {
-        events.push({ step: index, circuit: step.circuit, part: part + 1, parts: calls, ...misc(e) });
-      }
+      for (const e of r.context.events as unknown[]) stepEvents.push(misc(e));
     }
+    stepEvents.forEach((e, i) => events.push({ step: index, circuit: step.circuit, part: i + 1, parts: stepEvents.length, ...e }));
   }
   return { id, address, events, state: Buffer.from(state.serialize()), deployedState, operations: state.operations().map((o) => (typeof o === 'string' ? o : hex(o))) };
 }
 
 async function main(): Promise<void> {
   const ids = process.argv.slice(2);
-  const rows = readMatrix().rows.filter((r) => ids.length === 0 || ids.includes(r.id));
+  const rows = readAllRows().filter((r) => ids.length === 0 || ids.includes(r.id));
   for (const row of rows) {
     const s = await simulatePi(row.id);
     const bundle = readBundles().bundles.find((b) => b.id === row.id);

@@ -22,10 +22,10 @@ regenerates into a temporary directory and compares.
 | `deployments/reference-set.json` | `6b37b56af510d3483899e04690762b12dc0a059853ed07fdd4036e5c2bf6a40b` |
 | `deployments/public-interface-set.json` | `cf727696b4465408e1ba3a8e4f3727729c65e61aa04731fa282d09d3a5acfe28` |
 | `deployments/generated-matrix.json` | `9b813052eb95aaf49df850c2c10554504c7a2e2d22a6567802609513a92a5e9c` |
-| `deployments/bundles.json` | `5a050dc994e96f249e302e9485ad1b4098e83b91b894c45a7ce4b4a479b7cd06` |
+| `deployments/bundles.json` | `e5e682e993605d702f9512e67056e8215779e4ce5ca02e5aee8eac194d0b867f` |
 | `scripts/generate-pi-contracts.ts` | `5b4e94e33fbadf8b3d2b1702ee8e93402aeb1450fb9a48c6ff4eb2683cf3e8cc` |
-| `scripts/bundle.ts` | `d70f4666784fb6f9821ad0919bc1a89e4a31c820c79a0b6c4ce44fdf4dcc8492` |
-| `scripts/simulate-pi.ts` | `1a4cea14ce4bd8e10a6c2798e43de0a1602a8a83fe6676c98a5cc8e673468d68` |
+| `scripts/bundle.ts` | `9823dff8ec074dad874ba322d1b54e2f66b4d5595b91aaea4ce488c148d4aa84` |
+| `scripts/simulate-pi.ts` | `014611f0c687c01cbe132c539bbda2f916e100708ce682a5b6275ea970d24c2d` |
 | `scripts/export-fixtures.ts` | `38a6168d142dd18c4be48381efebb378dc643ad4f86d91b0a01122db8825704a` |
 | `contracts/TokenMetadata.compact` | `7d16b4da4209f48815da07950513bbd58b2f14d795db8fe54f7fd2d5b7fb5847` |
 | `contracts/OffChainInterface.compact` | `c9aaba4de48b17ac3c532e296a223da95836e5ad0d3f0e83f5d15f35cfc94f88` |

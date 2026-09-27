@@ -37,9 +37,11 @@ contracts/vendor/openzeppelin/       OpenZeppelin Compact Contracts v0.4.0-alpha
                                      cannot carry a node_modules path), see its SOURCE.md
 contracts/generated/                 the PI set (LSUNPI, SSTARPI, CNSTPI, UPROMPI) and the DU set (SNEBDU,
                                      LMOONDU, UMETDU, DAURDU) — GENERATED, do not edit
+contracts/interfaces/                the DU set's HIDDEN public interfaces (<ID>.Interface.compact, the private form) —
+                                     GENERATED, do not edit
 contracts/probe/                     PublicInterfaceProbe: publishBundle behind the emitter secret (a test harness)
 contracts/managed/                   compiler output (generated JS/TS, ZKIR, metadata, verifier keys; no proving keys)
-bundles/                             the PI contracts' public-interface bundles, as the local stack serves them —
+bundles/                             the PI (FULL) and DU (HIDDEN) contracts' public-interface bundles, as the local stack serves them —
                                      each with LICENSE, NOTICE and SOURCE.md (the licences and provenance of the
                                      files it copies), listed in its index.json like every other file
 tools/public-interface/              public-interface-deploy-check / public-interface-verify: a patched copy of
@@ -110,7 +112,19 @@ circuit has no verifier key on chain.
 ```sh
 node --import tsx scripts/generate-du-contracts.ts   # contracts/generated/*DU.compact + deployments/dual-matrix.json
 ./scripts/compile.sh generated/SNEBDU                # compactc 0.34.0 with keys (the k=18 parameters: MIDNIGHT_PP)
+./scripts/compile.sh interfaces/SNEBDU.Interface     # its HIDDEN interface, on its own
+node --import tsx scripts/bundle.ts                  # every bundle: deploy-check refuses a DU bundle unless every
+                                                     # published key equals the deployed contract's
+./scripts/verify-bundles.sh SNEBDU                   # Levels 1-3 offline
 ```
+
+The HIDDEN interfaces reproduce every deployed key: each module circuit a published circuit
+calls (the MIP-0018 module, the Public Interfaces module, OpenZeppelin's `NativeShieldedToken`,
+`FungibleToken` and `Utils`) is written out in the interface as a local circuit with its module
+body, so the published circuits compile to the same ZKIR — hence the same verifier keys — as the
+deployed contract's. A DU bundle ships only `src/<ID>.Interface.compact` (no module file, not
+the contract), one verifier key per published circuit, and LICENSE / NOTICE / SOURCE.md naming
+every origin of the adapted code.
 
 ## Toolchain
 

@@ -1,0 +1,141 @@
+{
+  "bundle": "v1",
+  "commitment": "ecmh-jubjub-grouphash",
+  "hash": "765647863cae34e19a14648cae65265b9b57a1489fa35fee3539288e6b3c541a",
+  "compiler": {
+    "name": "compactc",
+    "version": "0.34.0"
+  },
+  "files": [
+    {
+      "path": "LICENSE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "size": 11358
+    },
+    {
+      "path": "NOTICE",
+      "sha256": "bcada72a4ae810c576e201e48cbc5e8f94a45e7190375eef141415c75a1cca7e",
+      "size": 2202
+    },
+    {
+      "path": "README.md",
+      "sha256": "97b3f259a51a104dd6214881949886e20e9b1002499a69b35c582d61dd6daab8",
+      "size": 3464
+    },
+    {
+      "path": "SOURCE.md",
+      "sha256": "84665203d9d16f453077a38a06225b3d5cb278cb307b2d70c740bf63f22d141e",
+      "size": 2814
+    },
+    {
+      "path": "out/compiler/contract-info.json",
+      "sha256": "d5912471927cac2e5af43590e9a13770f8fd73b42f8e1c8ab56770f0dd35db3c",
+      "size": 7512
+    },
+    {
+      "path": "out/contract/index.d.ts",
+      "sha256": "201b5e11440df4b449868919cb4a87c68b15d000f95f7eab7c66e802b5a426e3",
+      "size": 8036
+    },
+    {
+      "path": "out/contract/index.js",
+      "sha256": "3e6088759c76bf4ab28232a9a1684d9d3cd141a8b16a9f831711b99d434d0e1c",
+      "size": 121643
+    },
+    {
+      "path": "out/contract/package.json",
+      "sha256": "5a065fe7d8eab2a582f428e11c2ea63aaf70607a54f69cfd5c711b5c53d91b32",
+      "size": 21
+    },
+    {
+      "path": "out/keys/decimals.verifier",
+      "sha256": "39f9cfa4547c143253ced8ed36aeaf2208b6985844fec671059c6ee900bbbe50",
+      "size": 1351
+    },
+    {
+      "path": "out/keys/domainSep.verifier",
+      "sha256": "94efb117c9e16dc367661a22cd9227d41da37f44f45c5d61b2fd830321657167",
+      "size": 1351
+    },
+    {
+      "path": "out/keys/mintShielded.verifier",
+      "sha256": "e91c18a4bf603a9e4f9586cbd27cadb9f8cba02725d27737cdbfa1ec2e10d6f4",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/mintUnshielded.verifier",
+      "sha256": "c0e2284313a63b0323fb5e1355f0306299ae1106d2551327105c0ad5e9c857e9",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/name.verifier",
+      "sha256": "a02ccf1f710e2af868875e1e08517b1041db086306dc060056345671410fc79b",
+      "size": 1351
+    },
+    {
+      "path": "out/keys/publishBundle.verifier",
+      "sha256": "22be3a18f3e19012658b1f44adfdc814ceba9223f48f88afeb2ffac7f52aac81",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/publishShieldedDecimals.verifier",
+      "sha256": "9cb3ab6e7c375d57848aeebe4eab768bb817c043667c50939102293e1c52d069",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/publishShieldedName.verifier",
+      "sha256": "a88959f99bb39ee97e71bac735f3781dd373ab5f27808eceb863e047b2d40978",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/publishShieldedRepository.verifier",
+      "sha256": "9ce73acecf980cffc96a921328afeec1a8a568bcac63c42d2dba1dadc5ebb56e",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/publishShieldedSymbol.verifier",
+      "sha256": "e989197d3febbdc7cc002653b1fc3aa66668871ccc9edff41840838d00ac5525",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/publishUnshieldedDecimals.verifier",
+      "sha256": "c429c5380f17b4c59642ce739f8415b3322e807e69283958761bb7ecbe579c41",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/publishUnshieldedName.verifier",
+      "sha256": "e3d1698232cf925168217551dddf0eb4dd831fe5ab543662da0b9055b1a9577f",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/publishUnshieldedRepository.verifier",
+      "sha256": "f3a1d6385e9e1a61101c113c4827fc14a69faf6f0643aace10217209cc6ddf5b",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/publishUnshieldedSymbol.verifier",
+      "sha256": "1ea919542ba6bd8ffb7dcf6f3ff6418becfe79dbca679c1811ac46de528c0a8e",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/symbol.verifier",
+      "sha256": "2ab50c5ceed771e8e3ca28e49b99a9ab9971fce3a7d9fe4ec296b94b989ce04f",
+      "size": 1351
+    },
+    {
+      "path": "out/keys/tokenColor.verifier",
+      "sha256": "34e1ca828c13934c9969fa8f276677712322ea375907dbee184a4f26db7e4e21",
+      "size": 2119
+    },
+    {
+      "path": "package.json",
+      "sha256": "a5fb49859d95c18c6bca177b8a29282ea4ef942491c241895e3057d6b198518b",
+      "size": 319
+    },
+    {
+      "path": "src/DAURDU.Interface.compact",
+      "sha256": "03d180b924afba754c0b8e018c8a837a8abdb92e62b7d39aa010000b88f9a342",
+      "size": 11935
+    }
+  ]
+}

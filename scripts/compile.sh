@@ -20,7 +20,8 @@ SRC_DIR="$ROOT/contracts"
 OUT_DIR="$SRC_DIR/managed"
 
 # TokenMetadata.compact and OffChainInterface.compact are modules (vendored, see
-# contracts/SOURCE.md); every importer compiles them transitively.
+# contracts/SOURCE.md); every importer compiles them transitively. A HIDDEN interface imports
+# nothing (it declares the deployed ledger itself).
 CONTRACTS=(
   "probe/PublicInterfaceProbe"
   # The PI set (spec 00024 §6.B), written by scripts/generate-pi-contracts.ts. Each
@@ -36,6 +37,13 @@ CONTRACTS=(
   "generated/LMOONDU"
   "generated/UMETDU"
   "generated/DAURDU"
+  # Their HIDDEN public interfaces (scripts/du-interfaces.ts, the private form): built on their
+  # own into contracts/managed/<ID>.Interface/; public-interface-deploy-check requires every key
+  # to equal the deployed contract's (scripts/bundle.ts).
+  "interfaces/SNEBDU.Interface"
+  "interfaces/LMOONDU.Interface"
+  "interfaces/UMETDU.Interface"
+  "interfaces/DAURDU.Interface"
 )
 
 CHECK=0

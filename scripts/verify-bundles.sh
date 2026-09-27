@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Levels 1, 2 and 3 of every PI bundle, offline, with the patched public-interface-verify
+# Levels 1, 2 and 3 of every bundle (the PI set's FULL and the DU set's HIDDEN ones), offline,
+# with the patched public-interface-verify
 # (tools/public-interface, UC-2 + UC-3):
 #
-#   ./scripts/verify-bundles.sh            all four bundles of deployments/bundles.json
+#   ./scripts/verify-bundles.sh            every bundle of deployments/bundles.json
 #   ./scripts/verify-bundles.sh UPROMPI    just one
 #
 # Inputs per contract, both produced here by scripts/simulate-pi.ts (the deployment plan
@@ -12,8 +13,8 @@
 # Result: out/sim/<ID>/verify-l3.json (the tool's --json report); the script fails unless
 # every bundle reaches Level 3.
 #
-# Level 3 recompiles each bundle's published source (the whole contract, FULL interface)
-# with keys: minutes per contract. It needs a compactc 0.34.0 — COMPACTC=<path to compactc>
+# Level 3 recompiles each bundle's published source (the whole contract for a FULL interface,
+# the interface file for a HIDDEN one) with keys: minutes per contract. It needs a compactc 0.34.0 — COMPACTC=<path to compactc>
 # (e.g. the toolchain mounted into a container), otherwise the `compact` CLI with
 # `+0.34.0` — and the zk parameters up to k=18 (MIDNIGHT_PP or ~/.cache/midnight/zk-params).
 # Nothing is fetched: the bundles are read from bundles/<path>/.

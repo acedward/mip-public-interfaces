@@ -1,0 +1,126 @@
+{
+  "bundle": "v1",
+  "commitment": "ecmh-jubjub-grouphash",
+  "hash": "c447326441537bb13416b5624687026ce0fb8f9b6ea2aa57f13515719992c741",
+  "compiler": {
+    "name": "compactc",
+    "version": "0.34.0"
+  },
+  "files": [
+    {
+      "path": "LICENSE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "size": 11358
+    },
+    {
+      "path": "NOTICE",
+      "sha256": "7c91b88b6ac61081bf256b25ac445b433132c53d690b053994fefb53a93f38ab",
+      "size": 2202
+    },
+    {
+      "path": "README.md",
+      "sha256": "ea0e85d5d8930089cdfd5e5713052048a9b26e0344737b0ae48263f7932ebc06",
+      "size": 3343
+    },
+    {
+      "path": "SOURCE.md",
+      "sha256": "7c9d68b65ef2b7fc1697cbf9a1b130cb8368fb046c4ab0d470e2abfbbd464275",
+      "size": 2814
+    },
+    {
+      "path": "out/compiler/contract-info.json",
+      "sha256": "367222b19912ac330d9fe728d307dae631be442fa2b0e0840cd95cab25fd9182",
+      "size": 5400
+    },
+    {
+      "path": "out/contract/index.d.ts",
+      "sha256": "282487025ff55712655de101797bc055137de0208cf36d87da34eb6bec21ae79",
+      "size": 6354
+    },
+    {
+      "path": "out/contract/index.js",
+      "sha256": "63ad5bb80e04a489bf2681de70dca58bda2c6aa2e3b92755fce16564ac6f3eac",
+      "size": 135747
+    },
+    {
+      "path": "out/contract/package.json",
+      "sha256": "5a065fe7d8eab2a582f428e11c2ea63aaf70607a54f69cfd5c711b5c53d91b32",
+      "size": 21
+    },
+    {
+      "path": "out/keys/decimals.verifier",
+      "sha256": "39f9cfa4547c143253ced8ed36aeaf2208b6985844fec671059c6ee900bbbe50",
+      "size": 1351
+    },
+    {
+      "path": "out/keys/domainSep.verifier",
+      "sha256": "94efb117c9e16dc367661a22cd9227d41da37f44f45c5d61b2fd830321657167",
+      "size": 1351
+    },
+    {
+      "path": "out/keys/mint.verifier",
+      "sha256": "e91c18a4bf603a9e4f9586cbd27cadb9f8cba02725d27737cdbfa1ec2e10d6f4",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/name.verifier",
+      "sha256": "a02ccf1f710e2af868875e1e08517b1041db086306dc060056345671410fc79b",
+      "size": 1351
+    },
+    {
+      "path": "out/keys/publishBundle.verifier",
+      "sha256": "22be3a18f3e19012658b1f44adfdc814ceba9223f48f88afeb2ffac7f52aac81",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/publishDecimals.verifier",
+      "sha256": "8da10bbc2f0d90c6f4f3aeada6f5f60793ebc42fb2738decce75ad882a7add09",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/publishMetadata.verifier",
+      "sha256": "d975e6a1d18dcc850d6ca91509e0d478aebf4455e5635fbc741b311e3ed722ef",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/publishMetadataDescription.verifier",
+      "sha256": "f041fdb37c7de554456d24e4066919efac0bef05d293cec722fbc99d192001d3",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/publishName.verifier",
+      "sha256": "2d1ec7d12196d37858e4ddad619d6a0d0619b97905c0c7e7aaeb201360fa6059",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/publishRepository.verifier",
+      "sha256": "d2522c1bbbd8ceb379cc42f5f56552034e13284fdeef3e416d10ac610e4bc587",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/publishSymbol.verifier",
+      "sha256": "5b186fe6152bf41620900e03b5c6651ec78839e98ad840a52552702c1c862db1",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/symbol.verifier",
+      "sha256": "2ab50c5ceed771e8e3ca28e49b99a9ab9971fce3a7d9fe4ec296b94b989ce04f",
+      "size": 1351
+    },
+    {
+      "path": "out/keys/tokenColor.verifier",
+      "sha256": "34e1ca828c13934c9969fa8f276677712322ea375907dbee184a4f26db7e4e21",
+      "size": 2119
+    },
+    {
+      "path": "package.json",
+      "sha256": "e8afa621f10a8d044a9c83fb9b9ca45d0ce81930283d2cfcb3df786482230aa4",
+      "size": 319
+    },
+    {
+      "path": "src/SNEBDU.Interface.compact",
+      "sha256": "de3c97e5ac8c8e3cb6f10cf647c4e5325414606a9604d583cee39d1dd8887a0e",
+      "size": 15081
+    }
+  ]
+}

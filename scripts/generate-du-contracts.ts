@@ -43,11 +43,15 @@
  *   node --import tsx scripts/generate-du-contracts.ts --out <dir>   # write elsewhere (the tests
  *                                                                    # regenerate into a temp dir)
  *
- * Writes `contracts/generated/<ID>.compact` and `deployments/dual-matrix.json` (the
- * step-by-step plan the deployment and the simulator corpus execute).
+ * Writes `contracts/generated/<ID>.compact`, its HIDDEN interface
+ * `contracts/interfaces/<ID>.Interface.compact` (scripts/du-interfaces.ts, sub-plan 03-A2) and
+ * `deployments/dual-matrix.json` (the step-by-step plan the deployment and the simulator corpus
+ * execute).
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+
+import { interfaceSource } from './du-interfaces.js';
 
 const ROOT = path.resolve(new URL(import.meta.url).pathname, '..', '..');
 const REFERENCE_SET = path.join(ROOT, 'deployments', 'reference-set.json');
@@ -833,6 +837,7 @@ function main(): void {
   }
   const OUT_CONTRACTS = path.join(outRoot, 'contracts', 'generated');
   const OUT_MATRIX = path.join(outRoot, 'deployments', 'dual-matrix.json');
+  const OUT_INTERFACES = path.join(outRoot, ...dualSet.interfaceDir.split('/'));
 
   const all = variants();
   const rows = all.filter((v) => selected.length === 0 || selected.includes(v.id) || selected.includes(v.ref.id));
@@ -843,6 +848,7 @@ function main(): void {
   }
 
   mkdirSync(OUT_CONTRACTS, { recursive: true });
+  mkdirSync(OUT_INTERFACES, { recursive: true });
   mkdirSync(path.dirname(OUT_MATRIX), { recursive: true });
 
   const matrixRows: unknown[] = [];
@@ -850,8 +856,9 @@ function main(): void {
     const planned = planSteps(v);
     if (rows.includes(v)) {
       writeFileSync(path.join(OUT_CONTRACTS, `${v.id}.compact`), GENERATORS[v.du.template](v, planned), 'utf8');
+      writeFileSync(path.join(OUT_INTERFACES, `${v.id}.Interface.compact`), interfaceSource(v, planned), 'utf8');
       const events = planned.reduce((n, s) => n + (s.kind === 'emit' ? s.declaration.parts : 0), 0);
-      console.log(`${v.id.padEnd(8)} ${v.du.template.padEnd(22)} ${String(planned.length).padStart(2)} steps, ${String(events).padStart(2)} MIP-0018 events; bundle ${v.bundleParts} part(s) -> contracts/generated/${v.id}.compact`);
+      console.log(`${v.id.padEnd(8)} ${v.du.template.padEnd(22)} ${String(planned.length).padStart(2)} steps, ${String(events).padStart(2)} MIP-0018 events; bundle ${v.bundleParts} part(s) -> contracts/generated/${v.id}.compact + ${v.interfaceSource}`);
     }
     matrixRows.push({
       id: v.id,
