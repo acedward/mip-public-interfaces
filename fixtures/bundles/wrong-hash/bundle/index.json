@@ -1,16 +1,31 @@
 {
   "bundle": "v1",
   "commitment": "ecmh-jubjub-grouphash",
-  "hash": "b0e02764957c862bc34a327c9252f9f39e6f651aa0ffdbf1b2e90c16014c06af",
+  "hash": "dd1c58415a76f7accc568761ad65870dccbbdde58723eef40608b42ed252e1c8",
   "compiler": {
     "name": "compactc",
     "version": "0.34.0"
   },
   "files": [
     {
+      "path": "LICENSE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "size": 11358
+    },
+    {
+      "path": "NOTICE",
+      "sha256": "eb56653bc9c2331d40bc3394c7f77385fa392d36099a7df48dc9d8fc5f0d0dd9",
+      "size": 1997
+    },
+    {
       "path": "README.md",
-      "sha256": "68e143dcfb9ea67a2439d003c349ea46fa3d3d3e3e5dcb744a6dc9f774ef4942",
-      "size": 2884
+      "sha256": "8d046b71c63d5560d44069e057f8b409271ed3c756e516441bb70f4194add072",
+      "size": 3106
+    },
+    {
+      "path": "SOURCE.md",
+      "sha256": "a26585c6b8b2dc28f547c7b514f3b4ca9c888e8047214d218d874e1b97a842c6",
+      "size": 2093
     },
     {
       "path": "out/compiler/contract-info.json",

@@ -38,7 +38,9 @@ contracts/vendor/openzeppelin/       OpenZeppelin Compact Contracts v0.4.0-alpha
 contracts/generated/                 the PI set: LSUNPI, SSTARPI, CNSTPI, UPROMPI — GENERATED, do not edit
 contracts/probe/                     PublicInterfaceProbe: publishBundle behind the emitter secret (a test harness)
 contracts/managed/                   compiler output (generated JS/TS, ZKIR, metadata, verifier keys; no proving keys)
-bundles/                             the PI contracts' public-interface bundles, as the local stack serves them
+bundles/                             the PI contracts' public-interface bundles, as the local stack serves them —
+                                     each with LICENSE, NOTICE and SOURCE.md (the licences and provenance of the
+                                     files it copies), listed in its index.json like every other file
 tools/public-interface/              public-interface-deploy-check / public-interface-verify: a patched copy of
                                      [B]'s reference tools (own npm package; see its SOURCE.md)
 vendor/compact-multi-part-event/     [Y]'s reference publisher and reader, unmodified (see its SOURCE.md)

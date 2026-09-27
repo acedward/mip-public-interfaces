@@ -19,12 +19,12 @@ regenerates into a temporary directory and compares.
 
 | Case | URL | Bundle bytes | Expected (indexer) |
 | --- | --- | --- | --- |
-| `valid` | `http://bundles/fixtures/valid/index.json` | 184740 | verified |
-| `tampered-file` | `http://bundles/fixtures/tampered-file/index.json` | 184786 | failed — src/generated/LSUNPI.compact: sha256 differs from index.json |
-| `wrong-hash` | `http://bundles/fixtures/wrong-hash/index.json` | 184750 | failed — index.json hash differs from the event commitment; nothing but index.json requested |
-| `over-size-cap` | `http://bundles/fixtures/over-size-cap/index.json` | 1233485 | unchecked — size cap: the bundle is larger than 1048576 bytes |
-| `loopback-host` | `http://127.0.0.1/fixtures/loopback-host/index.json` | 184760 | unfetchable — private or loopback address (127.0.0.1) |
-| `compiler-not-installed` | `http://bundles/fixtures/compiler-not-installed/index.json` | 184774 | verified — compiler 0.33.0 unavailable |
+| `valid` | `http://bundles/fixtures/valid/index.json` | 200835 | verified |
+| `tampered-file` | `http://bundles/fixtures/tampered-file/index.json` | 200881 | failed — src/generated/LSUNPI.compact: sha256 differs from index.json |
+| `wrong-hash` | `http://bundles/fixtures/wrong-hash/index.json` | 200845 | failed — index.json hash differs from the event commitment; nothing but index.json requested |
+| `over-size-cap` | `http://bundles/fixtures/over-size-cap/index.json` | 1249580 | unchecked — size cap: the bundle is larger than 1048576 bytes |
+| `loopback-host` | `http://127.0.0.1/fixtures/loopback-host/index.json` | 200855 | unfetchable — private or loopback address (127.0.0.1) |
+| `compiler-not-installed` | `http://bundles/fixtures/compiler-not-installed/index.json` | 200869 | verified — compiler 0.33.0 unavailable |
 
 The over-size-cap case is built to exceed a **1048576-byte** bundle cap (`limits.maxBundleBytes` in cases.json); a verifier whose cap is larger verifies it like `valid` (it is a consistent bundle with one more listed file). The four PI bundles under `bundles/` are all far below that cap.
 
@@ -35,11 +35,11 @@ The over-size-cap case is built to exceed a **1048576-byte** bundle cap (`limits
 | `deployments/reference-set.json` | `6b37b56af510d3483899e04690762b12dc0a059853ed07fdd4036e5c2bf6a40b` |
 | `deployments/public-interface-set.json` | `cf727696b4465408e1ba3a8e4f3727729c65e61aa04731fa282d09d3a5acfe28` |
 | `deployments/generated-matrix.json` | `9b813052eb95aaf49df850c2c10554504c7a2e2d22a6567802609513a92a5e9c` |
-| `deployments/bundles.json` | `89d02f86c049ae0fbf9dc0dab1649d04f8b9fc9cc167ff93cf3baaf99af72dde` |
+| `deployments/bundles.json` | `34496d6124fadd745248908cb34cf31603223151d8acfb80f4d972b3cbf1dd84` |
 | `scripts/generate-pi-contracts.ts` | `5b4e94e33fbadf8b3d2b1702ee8e93402aeb1450fb9a48c6ff4eb2683cf3e8cc` |
-| `scripts/bundle.ts` | `b0734a45c47f714afd1e5a6042a28c278cbe44abcfd8096c1f33a266b7e3f118` |
+| `scripts/bundle.ts` | `d70f4666784fb6f9821ad0919bc1a89e4a31c820c79a0b6c4ce44fdf4dcc8492` |
 | `scripts/simulate-pi.ts` | `1a4cea14ce4bd8e10a6c2798e43de0a1602a8a83fe6676c98a5cc8e673468d68` |
-| `scripts/export-fixtures.ts` | `9be74d5567411c135ced2b5161741c60643a6e03a58f254cedd39108bf56763c` |
+| `scripts/export-fixtures.ts` | `38a6168d142dd18c4be48381efebb378dc643ad4f86d91b0a01122db8825704a` |
 | `contracts/TokenMetadata.compact` | `7d16b4da4209f48815da07950513bbd58b2f14d795db8fe54f7fd2d5b7fb5847` |
 | `contracts/OffChainInterface.compact` | `c9aaba4de48b17ac3c532e296a223da95836e5ad0d3f0e83f5d15f35cfc94f88` |
 | `contracts/generated/LSUNPI.compact` | `17a7c49a4e7c140c32577950b36cd071603a6c1ef6b851d350034f10e7267e3b` |
@@ -60,8 +60,11 @@ Compiled artefacts (every committed file of `contracts/managed/<ID>/`, as one di
 
 | File | SHA-256 |
 | --- | --- |
-| `fixtures/bundles/valid/bundle/README.md` | `b6b317e909cfb2dd8830514fa95e03558540d8a5c354c707c24b443ef3be94a9` |
-| `fixtures/bundles/valid/bundle/index.json` | `c156c8f76626bb952cba0162b52884454adbcf005d7851b7da0d02e59d172698` |
+| `fixtures/bundles/valid/bundle/LICENSE` | `cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30` |
+| `fixtures/bundles/valid/bundle/NOTICE` | `eb56653bc9c2331d40bc3394c7f77385fa392d36099a7df48dc9d8fc5f0d0dd9` |
+| `fixtures/bundles/valid/bundle/README.md` | `ceb8d2516f6bd4c53a5101f835594cb03c85140ea95a77e1d07c489baf25c701` |
+| `fixtures/bundles/valid/bundle/SOURCE.md` | `a26585c6b8b2dc28f547c7b514f3b4ca9c888e8047214d218d874e1b97a842c6` |
+| `fixtures/bundles/valid/bundle/index.json` | `5202ee689c535bb64662de18d51ac408d9d0d1e37cc15c7e00d84dcb22df6b1e` |
 | `fixtures/bundles/valid/bundle/out/compiler/contract-info.json` | `52c14f9c13848f5c5b25e93e45d55a62c73d3bf421a2943c2015124d3315ffbe` |
 | `fixtures/bundles/valid/bundle/out/contract/index.d.ts` | `4f97711554c83d3786c764b603c7785cad0c5a1781146f5dd25dc88dc7e6cdd7` |
 | `fixtures/bundles/valid/bundle/out/contract/index.js` | `f8e4eee45610c81b3c6f8f37d8554254c04285aa20a0bdbc8f18953560946395` |
@@ -81,8 +84,11 @@ Compiled artefacts (every committed file of `contracts/managed/<ID>/`, as one di
 | `fixtures/bundles/valid/bundle/src/generated/LSUNPI.compact` | `17a7c49a4e7c140c32577950b36cd071603a6c1ef6b851d350034f10e7267e3b` |
 | `fixtures/bundles/valid/bundle/src/vendor/openzeppelin/token/FungibleToken.compact` | `78047c735811c133b82369c9e23acf49a9706d0473dfa959d9cf7eea2ef42021` |
 | `fixtures/bundles/valid/bundle/src/vendor/openzeppelin/utils/Utils.compact` | `215d6374bb22a7c950bb43d046f6380f2c432fb841a2fcead2a35766d159f314` |
-| `fixtures/bundles/tampered-file/bundle/README.md` | `9679fb5cb18ba4408ab7338a38a69dd755d5948d563e50f4386d3655e3a79948` |
-| `fixtures/bundles/tampered-file/bundle/index.json` | `d284e4ac02944981f8881445ca6a6c125f20ec286230802f50393aa4a9f849db` |
+| `fixtures/bundles/tampered-file/bundle/LICENSE` | `cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30` |
+| `fixtures/bundles/tampered-file/bundle/NOTICE` | `eb56653bc9c2331d40bc3394c7f77385fa392d36099a7df48dc9d8fc5f0d0dd9` |
+| `fixtures/bundles/tampered-file/bundle/README.md` | `0c72bccb4ebcda75cd6cbfad24431a64cb5a2a7aa9d48b0dc6f1848a494eb90f` |
+| `fixtures/bundles/tampered-file/bundle/SOURCE.md` | `a26585c6b8b2dc28f547c7b514f3b4ca9c888e8047214d218d874e1b97a842c6` |
+| `fixtures/bundles/tampered-file/bundle/index.json` | `6695838743eaf7f039b9972b2475589e5c86cfb6695b79a4e8af240a3164fcb4` |
 | `fixtures/bundles/tampered-file/bundle/out/compiler/contract-info.json` | `52c14f9c13848f5c5b25e93e45d55a62c73d3bf421a2943c2015124d3315ffbe` |
 | `fixtures/bundles/tampered-file/bundle/out/contract/index.d.ts` | `4f97711554c83d3786c764b603c7785cad0c5a1781146f5dd25dc88dc7e6cdd7` |
 | `fixtures/bundles/tampered-file/bundle/out/contract/index.js` | `f8e4eee45610c81b3c6f8f37d8554254c04285aa20a0bdbc8f18953560946395` |
@@ -102,8 +108,11 @@ Compiled artefacts (every committed file of `contracts/managed/<ID>/`, as one di
 | `fixtures/bundles/tampered-file/bundle/src/generated/LSUNPI.compact` | `8463916091448124d89f1b81e6c9401e4facc4ddfc55eb92e4a8999943f7439b` |
 | `fixtures/bundles/tampered-file/bundle/src/vendor/openzeppelin/token/FungibleToken.compact` | `78047c735811c133b82369c9e23acf49a9706d0473dfa959d9cf7eea2ef42021` |
 | `fixtures/bundles/tampered-file/bundle/src/vendor/openzeppelin/utils/Utils.compact` | `215d6374bb22a7c950bb43d046f6380f2c432fb841a2fcead2a35766d159f314` |
-| `fixtures/bundles/wrong-hash/bundle/README.md` | `68e143dcfb9ea67a2439d003c349ea46fa3d3d3e3e5dcb744a6dc9f774ef4942` |
-| `fixtures/bundles/wrong-hash/bundle/index.json` | `63c4764fe0568ce6f301deb3ef4adf08e27b22a7d7a08ea753b0d4eaa7149e6c` |
+| `fixtures/bundles/wrong-hash/bundle/LICENSE` | `cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30` |
+| `fixtures/bundles/wrong-hash/bundle/NOTICE` | `eb56653bc9c2331d40bc3394c7f77385fa392d36099a7df48dc9d8fc5f0d0dd9` |
+| `fixtures/bundles/wrong-hash/bundle/README.md` | `8d046b71c63d5560d44069e057f8b409271ed3c756e516441bb70f4194add072` |
+| `fixtures/bundles/wrong-hash/bundle/SOURCE.md` | `a26585c6b8b2dc28f547c7b514f3b4ca9c888e8047214d218d874e1b97a842c6` |
+| `fixtures/bundles/wrong-hash/bundle/index.json` | `ce149b183d573cd471575f27feb9cb87ad3c1c9e6bb51daf860ae6df36f92d8e` |
 | `fixtures/bundles/wrong-hash/bundle/out/compiler/contract-info.json` | `52c14f9c13848f5c5b25e93e45d55a62c73d3bf421a2943c2015124d3315ffbe` |
 | `fixtures/bundles/wrong-hash/bundle/out/contract/index.d.ts` | `4f97711554c83d3786c764b603c7785cad0c5a1781146f5dd25dc88dc7e6cdd7` |
 | `fixtures/bundles/wrong-hash/bundle/out/contract/index.js` | `f8e4eee45610c81b3c6f8f37d8554254c04285aa20a0bdbc8f18953560946395` |
@@ -123,8 +132,11 @@ Compiled artefacts (every committed file of `contracts/managed/<ID>/`, as one di
 | `fixtures/bundles/wrong-hash/bundle/src/generated/LSUNPI.compact` | `17a7c49a4e7c140c32577950b36cd071603a6c1ef6b851d350034f10e7267e3b` |
 | `fixtures/bundles/wrong-hash/bundle/src/vendor/openzeppelin/token/FungibleToken.compact` | `78047c735811c133b82369c9e23acf49a9706d0473dfa959d9cf7eea2ef42021` |
 | `fixtures/bundles/wrong-hash/bundle/src/vendor/openzeppelin/utils/Utils.compact` | `215d6374bb22a7c950bb43d046f6380f2c432fb841a2fcead2a35766d159f314` |
-| `fixtures/bundles/over-size-cap/bundle/README.md` | `8658435b7a9f8a4e3018fff7b18fe9f1c689a884a7b248bb7b979ae19543f57f` |
-| `fixtures/bundles/over-size-cap/bundle/index.json` | `76226abf67a8459e0064dcfa58f601115a55ae3da915cdffb4a9550a9c196ce6` |
+| `fixtures/bundles/over-size-cap/bundle/LICENSE` | `cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30` |
+| `fixtures/bundles/over-size-cap/bundle/NOTICE` | `eb56653bc9c2331d40bc3394c7f77385fa392d36099a7df48dc9d8fc5f0d0dd9` |
+| `fixtures/bundles/over-size-cap/bundle/README.md` | `718130def5067a82910b12256513e0d61b59d072a86e34d86cb6e7c9ce343597` |
+| `fixtures/bundles/over-size-cap/bundle/SOURCE.md` | `a26585c6b8b2dc28f547c7b514f3b4ca9c888e8047214d218d874e1b97a842c6` |
+| `fixtures/bundles/over-size-cap/bundle/index.json` | `fe9343914816e055cde45fc7c9e31e53f3843825bdc03f30ae766dd8ceebb7eb` |
 | `fixtures/bundles/over-size-cap/bundle/out/compiler/contract-info.json` | `52c14f9c13848f5c5b25e93e45d55a62c73d3bf421a2943c2015124d3315ffbe` |
 | `fixtures/bundles/over-size-cap/bundle/out/contract/index.d.ts` | `4f97711554c83d3786c764b603c7785cad0c5a1781146f5dd25dc88dc7e6cdd7` |
 | `fixtures/bundles/over-size-cap/bundle/out/contract/index.js` | `f8e4eee45610c81b3c6f8f37d8554254c04285aa20a0bdbc8f18953560946395` |
@@ -145,8 +157,11 @@ Compiled artefacts (every committed file of `contracts/managed/<ID>/`, as one di
 | `fixtures/bundles/over-size-cap/bundle/src/generated/LSUNPI.compact` | `17a7c49a4e7c140c32577950b36cd071603a6c1ef6b851d350034f10e7267e3b` |
 | `fixtures/bundles/over-size-cap/bundle/src/vendor/openzeppelin/token/FungibleToken.compact` | `78047c735811c133b82369c9e23acf49a9706d0473dfa959d9cf7eea2ef42021` |
 | `fixtures/bundles/over-size-cap/bundle/src/vendor/openzeppelin/utils/Utils.compact` | `215d6374bb22a7c950bb43d046f6380f2c432fb841a2fcead2a35766d159f314` |
-| `fixtures/bundles/loopback-host/bundle/README.md` | `e0ca0fdcf24d08c48f3023723250bcddaf6c2c2edf85f9166f154f6ab43606e1` |
-| `fixtures/bundles/loopback-host/bundle/index.json` | `88530a6c07126024e06cd1c413e941081d241881a2fda301f876c3e70611f9d0` |
+| `fixtures/bundles/loopback-host/bundle/LICENSE` | `cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30` |
+| `fixtures/bundles/loopback-host/bundle/NOTICE` | `eb56653bc9c2331d40bc3394c7f77385fa392d36099a7df48dc9d8fc5f0d0dd9` |
+| `fixtures/bundles/loopback-host/bundle/README.md` | `ebb5a234cb121fd509b888c40dfe54bee4466f8e05176139c4771891ed6df176` |
+| `fixtures/bundles/loopback-host/bundle/SOURCE.md` | `a26585c6b8b2dc28f547c7b514f3b4ca9c888e8047214d218d874e1b97a842c6` |
+| `fixtures/bundles/loopback-host/bundle/index.json` | `a1f0af494887a12bada20890ba7ac6e55f1693d4414b99260644713d6099f649` |
 | `fixtures/bundles/loopback-host/bundle/out/compiler/contract-info.json` | `52c14f9c13848f5c5b25e93e45d55a62c73d3bf421a2943c2015124d3315ffbe` |
 | `fixtures/bundles/loopback-host/bundle/out/contract/index.d.ts` | `4f97711554c83d3786c764b603c7785cad0c5a1781146f5dd25dc88dc7e6cdd7` |
 | `fixtures/bundles/loopback-host/bundle/out/contract/index.js` | `f8e4eee45610c81b3c6f8f37d8554254c04285aa20a0bdbc8f18953560946395` |
@@ -166,8 +181,11 @@ Compiled artefacts (every committed file of `contracts/managed/<ID>/`, as one di
 | `fixtures/bundles/loopback-host/bundle/src/generated/LSUNPI.compact` | `17a7c49a4e7c140c32577950b36cd071603a6c1ef6b851d350034f10e7267e3b` |
 | `fixtures/bundles/loopback-host/bundle/src/vendor/openzeppelin/token/FungibleToken.compact` | `78047c735811c133b82369c9e23acf49a9706d0473dfa959d9cf7eea2ef42021` |
 | `fixtures/bundles/loopback-host/bundle/src/vendor/openzeppelin/utils/Utils.compact` | `215d6374bb22a7c950bb43d046f6380f2c432fb841a2fcead2a35766d159f314` |
-| `fixtures/bundles/compiler-not-installed/bundle/README.md` | `d60ddcea6b7a995e6dda5e2a4415e4a9ea8cd7dc25dd1faf8dfb66ed6d8254e7` |
-| `fixtures/bundles/compiler-not-installed/bundle/index.json` | `69a54488375d0557d751d0742a036c2203d1aeed503b4c6d15d3efb607927c71` |
+| `fixtures/bundles/compiler-not-installed/bundle/LICENSE` | `cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30` |
+| `fixtures/bundles/compiler-not-installed/bundle/NOTICE` | `eb56653bc9c2331d40bc3394c7f77385fa392d36099a7df48dc9d8fc5f0d0dd9` |
+| `fixtures/bundles/compiler-not-installed/bundle/README.md` | `90bec68b058d45a2590cd6628762fbaa65c57e47cc123dfa2a89bdc2a294d537` |
+| `fixtures/bundles/compiler-not-installed/bundle/SOURCE.md` | `a26585c6b8b2dc28f547c7b514f3b4ca9c888e8047214d218d874e1b97a842c6` |
+| `fixtures/bundles/compiler-not-installed/bundle/index.json` | `15b89605ed13fdc8276f28940ce87d77257d72b6db25fa24031d83a55a797bbc` |
 | `fixtures/bundles/compiler-not-installed/bundle/out/compiler/contract-info.json` | `52c14f9c13848f5c5b25e93e45d55a62c73d3bf421a2943c2015124d3315ffbe` |
 | `fixtures/bundles/compiler-not-installed/bundle/out/contract/index.d.ts` | `4f97711554c83d3786c764b603c7785cad0c5a1781146f5dd25dc88dc7e6cdd7` |
 | `fixtures/bundles/compiler-not-installed/bundle/out/contract/index.js` | `f8e4eee45610c81b3c6f8f37d8554254c04285aa20a0bdbc8f18953560946395` |
@@ -187,5 +205,5 @@ Compiled artefacts (every committed file of `contracts/managed/<ID>/`, as one di
 | `fixtures/bundles/compiler-not-installed/bundle/src/generated/LSUNPI.compact` | `17a7c49a4e7c140c32577950b36cd071603a6c1ef6b851d350034f10e7267e3b` |
 | `fixtures/bundles/compiler-not-installed/bundle/src/vendor/openzeppelin/token/FungibleToken.compact` | `78047c735811c133b82369c9e23acf49a9706d0473dfa959d9cf7eea2ef42021` |
 | `fixtures/bundles/compiler-not-installed/bundle/src/vendor/openzeppelin/utils/Utils.compact` | `215d6374bb22a7c950bb43d046f6380f2c432fb841a2fcead2a35766d159f314` |
-| `fixtures/bundles/cases.json` | `c32e08f6f25daceae87a70092c3aef8cc6fd3740beef985f840f82ec9c7df0e2` |
+| `fixtures/bundles/cases.json` | `dc5c6bef7d033e273e479e81ba96ed7d51cc51f00c4d126ff3f786c523031fda` |
 | `fixtures/bundles/LSUNPI.state.hex` | `093c948cc255c5d7a55ed549ffc066a4d84b5472e608aa4e2308e92a516f4086` |

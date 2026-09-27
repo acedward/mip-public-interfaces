@@ -143,6 +143,36 @@ describe('each bundle is a FULL interface of its contract', () => {
     expect([...b.verifyOnly].sort()).toEqual(expected.sort());
   });
 
+  it.each(IDS)('%s: ships its licences and provenance — LICENSE, NOTICE, SOURCE.md, committed like every file (audit 02 E2-C1/C2)', (id) => {
+    const b = byId(id);
+    const dir = dirOf(join(ROOT, 'bundles'), b);
+    const listed = hash.readIndexFile(dir).files.map((f) => f.path);
+    for (const f of ['LICENSE', 'NOTICE', 'SOURCE.md']) expect(listed, f).toContain(f);
+    expect(readFileSync(join(dir, 'LICENSE')).equals(readFileSync(join(ROOT, 'LICENSE')))).toBe(true);
+    const notice = readFileSync(join(dir, 'NOTICE'), 'utf8');
+    // [B]'s NOTICE (Apache-2.0 §4(d)) for its module; OpenZeppelin's MIT notice IN FULL iff the bundle carries OZ code.
+    expect(notice).toContain('compact-off-chain-circuits\n    Copyright 2026 the compact-off-chain-circuits authors.');
+    const oz = listed.filter((f) => f.startsWith('src/vendor/openzeppelin/'));
+    const mit = readFileSync(join(ROOT, 'contracts', 'vendor', 'openzeppelin', 'LICENSE'), 'utf8').trimEnd().split('\n').map((l) => (l === '' ? '' : `    ${l}`)).join('\n');
+    expect(notice.includes(mit)).toBe(oz.length > 0);
+    for (const f of oz) expect(notice).toContain(f);
+    // SOURCE.md: every src/ file with its SHA-256 as shipped, and nothing else.
+    const rows = readFileSync(join(dir, 'SOURCE.md'), 'utf8').split('\n').filter((l) => /^\| `src\//.test(l));
+    const recorded = rows.map((l) => [/^\| `([^`]+)`/.exec(l)![1]!, /`([0-9a-f]{64})`/.exec(l)![1]!] as const);
+    expect(recorded.map(([f]) => f).sort()).toEqual(listed.filter((f) => f.startsWith('src/')).sort());
+    for (const [f, digest] of recorded) expect(createHash('sha256').update(readFileSync(join(dir, f))).digest('hex'), f).toBe(digest);
+  });
+
+  it.each(IDS)('%s: the bundle README says what the bundle is — a FULL interface, verified at Levels 1-3, never executed (it declares witnesses) (audit 02 E2-C3)', (id) => {
+    const readme = readFileSync(join(dirOf(join(ROOT, 'bundles'), byId(id)), 'README.md'), 'utf8');
+    expect(readme).toContain('a FULL interface, every circuit of the\ncontract is published');
+    expect(readme).not.toContain('deliberately\npartial');
+    expect(readme).toContain('This interface declares witnesses (`emitterSecret`');
+    expect(readme).not.toMatch(/--circuit /);
+    expect(readme).toMatch(/--level 3/);
+    expect(readme).toContain('`LICENSE`, `NOTICE`, `SOURCE.md` state the licences');
+  });
+
   it('UPROMPI: the only multi-part pointer — a URL over 224 bytes, 2 parts (02-B3)', () => {
     expect(record.bundles.filter((b) => b.parts > 1).map((b) => b.id)).toEqual(['UPROMPI']);
     const u = byId('UPROMPI');

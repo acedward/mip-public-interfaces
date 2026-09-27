@@ -25,6 +25,7 @@ import { appendFileSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync,
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+import { licenceFiles } from './bundle.js';
 import { addressOf, emitterSecretHashOf, readBundles, readMatrix, simulatePi, TEST_EMITTER_SECRET, type SimEvent } from './simulate-pi.js';
 
 const ROOT = path.resolve(new URL(import.meta.url).pathname, '..', '..');
@@ -43,7 +44,12 @@ type Hash = {
   walk(dir: string): string[];
 };
 type BundleMod = {
-  assembleBundle(o: { interfaceSrc: string; interfaceOut: string; outDir: string; url: string; pins?: { compiler?: string; language?: string; runtime?: string } }): { commitment: Buffer; url: string };
+  assembleBundle(o: {
+    interfaceSrc: string; interfaceOut: string; outDir: string; url: string; pins?: { compiler?: string; language?: string; runtime?: string };
+    extraFiles?: Record<string, string>; interfaceKind?: 'full';
+  }): { commitment: Buffer; url: string };
+  resolveImports(src: string): string[];
+  commonRoot(paths: string[]): string;
 };
 
 const TOKEN_METADATA = 'mip-0018:token-metadata[v1]';
@@ -175,11 +181,17 @@ const FIXTURE_BASE = 'http://bundles/fixtures/';
 
 async function exportBundles(out: string): Promise<{ hashes: Record<string, string>; summary: unknown[] }> {
   const hash = (await import(path.join(TOOLS, 'hash.mjs'))) as Hash;
-  const { assembleBundle } = (await import(path.join(TOOLS, 'bundle.mjs'))) as BundleMod;
+  const { assembleBundle, resolveImports, commonRoot } = (await import(path.join(TOOLS, 'bundle.mjs'))) as BundleMod;
   const dir = path.join(out, 'fixtures', 'bundles');
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
-  const base = { interfaceSrc: path.join(ROOT, 'contracts', 'generated', 'LSUNPI.compact'), interfaceOut: path.join(ROOT, 'contracts', 'managed', 'LSUNPI') };
+  const interfaceSrc = path.join(ROOT, 'contracts', 'generated', 'LSUNPI.compact');
+  const sources = [...resolveImports(interfaceSrc), path.resolve(interfaceSrc)];
+  // As scripts/bundle.ts builds LSUNPI's real bundle: a FULL interface with its licences and provenance.
+  const base = {
+    interfaceSrc, interfaceOut: path.join(ROOT, 'contracts', 'managed', 'LSUNPI'),
+    interfaceKind: 'full' as const, extraFiles: licenceFiles('LSUNPI', sources, commonRoot(sources)),
+  };
   const sim = await simulatePi('LSUNPI');
   writeFileSync(path.join(dir, 'LSUNPI.state.hex'), sim.state.toString('hex'));
   const bytesOf = (d: string) => hash.walk(d).reduce((n, f) => n + statSync(path.join(d, f)).size, 0);

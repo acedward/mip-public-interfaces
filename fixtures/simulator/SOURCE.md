@@ -22,11 +22,11 @@ regenerates into a temporary directory and compares.
 | `deployments/reference-set.json` | `6b37b56af510d3483899e04690762b12dc0a059853ed07fdd4036e5c2bf6a40b` |
 | `deployments/public-interface-set.json` | `cf727696b4465408e1ba3a8e4f3727729c65e61aa04731fa282d09d3a5acfe28` |
 | `deployments/generated-matrix.json` | `9b813052eb95aaf49df850c2c10554504c7a2e2d22a6567802609513a92a5e9c` |
-| `deployments/bundles.json` | `89d02f86c049ae0fbf9dc0dab1649d04f8b9fc9cc167ff93cf3baaf99af72dde` |
+| `deployments/bundles.json` | `34496d6124fadd745248908cb34cf31603223151d8acfb80f4d972b3cbf1dd84` |
 | `scripts/generate-pi-contracts.ts` | `5b4e94e33fbadf8b3d2b1702ee8e93402aeb1450fb9a48c6ff4eb2683cf3e8cc` |
-| `scripts/bundle.ts` | `b0734a45c47f714afd1e5a6042a28c278cbe44abcfd8096c1f33a266b7e3f118` |
+| `scripts/bundle.ts` | `d70f4666784fb6f9821ad0919bc1a89e4a31c820c79a0b6c4ce44fdf4dcc8492` |
 | `scripts/simulate-pi.ts` | `1a4cea14ce4bd8e10a6c2798e43de0a1602a8a83fe6676c98a5cc8e673468d68` |
-| `scripts/export-fixtures.ts` | `9be74d5567411c135ced2b5161741c60643a6e03a58f254cedd39108bf56763c` |
+| `scripts/export-fixtures.ts` | `38a6168d142dd18c4be48381efebb378dc643ad4f86d91b0a01122db8825704a` |
 | `contracts/TokenMetadata.compact` | `7d16b4da4209f48815da07950513bbd58b2f14d795db8fe54f7fd2d5b7fb5847` |
 | `contracts/OffChainInterface.compact` | `c9aaba4de48b17ac3c532e296a223da95836e5ad0d3f0e83f5d15f35cfc94f88` |
 | `contracts/generated/LSUNPI.compact` | `17a7c49a4e7c140c32577950b36cd071603a6c1ef6b851d350034f10e7267e3b` |
@@ -47,5 +47,5 @@ Compiled artefacts (every committed file of `contracts/managed/<ID>/`, as one di
 
 | File | SHA-256 |
 | --- | --- |
-| `fixtures/simulator/events.json` | `6f9339b150b637b5aa93775ef3f6f1d87709f5524272340cf07c6c8e77ee35be` |
-| `fixtures/simulator/interfaces.json` | `724e17625c301143ff9306b1213f957099c6ce1a3d3cd7a5af3c1c0ade9aff42` |
+| `fixtures/simulator/events.json` | `271bc6dacf030a4d0062d336ca72c7fe2d3c2ab8811842223ec86c6ef5c58b17` |
+| `fixtures/simulator/interfaces.json` | `25fa4f08cd4623d793d6e49b5584141cbe52d3b6100e8096e6f67657d291c72c` |

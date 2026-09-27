@@ -24,7 +24,7 @@
 import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { INDEX_FILE, indexUrlFor, walk, writeIndex } from './hash.mjs';
+import { INDEX_FILE, IndexError, indexUrlFor, pathProblem, walk, writeIndex } from './hash.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -96,8 +96,16 @@ export function commonRoot(paths) {
  * @param {string} [o.indexerUrl]   indexer GraphQL endpoint, for the README only
  * @param {object} [o.pins]         { compiler, language, runtime } override
  * @param {string} [o.runtimeDep]   `@midnight-ntwrk/compact-runtime` version
+ * @param {Record<string, string|Buffer>} [o.extraFiles]  further files the publisher ships,
+ *                                  by bundle path — licence texts, notices, provenance; listed in
+ *                                  index.json like every other file, never replacing one
+ *                                  (patch 00024-02-E2-C1 of project 00024: upstream bundles
+ *                                  carry no licence material)
+ * @param {'full'} [o.interfaceKind] 'full' when the published source is the WHOLE contract
+ *                                  (the README then says so instead of "deliberately partial";
+ *                                  patch 00024-02-E2-C3)
  */
-export function assembleBundle({ interfaceSrc, interfaceOut, outDir, url: requestedUrl, address, indexerUrl, pins, runtimeDep }) {
+export function assembleBundle({ interfaceSrc, interfaceOut, outDir, url: requestedUrl, address, indexerUrl, pins, runtimeDep, extraFiles, interfaceKind }) {
   const url = indexUrlFor(requestedUrl);
   for (const [label, p] of [['interface source', interfaceSrc], ['interface build', interfaceOut]]) {
     if (!existsSync(p)) throw new Error(`${label} not found: ${p}`);
@@ -149,7 +157,19 @@ export function assembleBundle({ interfaceSrc, interfaceOut, outDir, url: reques
     compact,
     dependencies: { '@midnight-ntwrk/compact-runtime': runtimeDep ?? compact.runtime },
   }, null, 2) + '\n');
-  writeFileSync(join(outDir, 'README.md'), bundleReadme({ url, address, indexerUrl, circuits, compact }));
+  const witnesses = (info.witnesses ?? []).map((w) => w?.name ?? String(w));
+  const extras = Object.keys(extraFiles ?? {}).sort();
+  writeFileSync(join(outDir, 'README.md'), bundleReadme({ url, address, indexerUrl, circuits, compact, witnesses, interfaceKind, extras }));
+
+  // --- files the publisher adds (licences, notices, provenance) — patch 00024-02-E2-C1 ---
+  for (const rel of extras) {
+    const problem = pathProblem(rel);
+    if (problem) throw new IndexError(`cannot publish ${JSON.stringify(rel)}: its path ${problem}`);
+    const dest = join(outDir, ...rel.split('/'));
+    if (existsSync(dest)) throw new Error(`the extra file ${rel} would replace a file the bundle already has`);
+    mkdirSync(dirname(dest), { recursive: true });
+    writeFileSync(dest, extraFiles[rel]);
+  }
 
   // --- the index, last: it lists every file written above ---
   const { index, commitment, bytes: indexBytes } = writeIndex(outDir);
@@ -158,10 +178,55 @@ export function assembleBundle({ interfaceSrc, interfaceOut, outDir, url: reques
   return { outDir, url, index, indexBytes, commitment, circuits, keyFiles, files, bytes, interfaceRel, compact, info };
 }
 
-function bundleReadme({ url, address, indexerUrl, circuits, compact }) {
+function bundleReadme({ url, address, indexerUrl, circuits, compact, witnesses = [], interfaceKind, extras = [] }) {
   const idx = indexerUrl ? `--indexer ${indexerUrl}` : '--indexer <graphql url>';
   const adr = address ? `--address ${address}` : '--address <hex>';
   const call = `--circuit ${circuits[0]}${circuits.length ? ' --args ...' : ''}`;
+  // Patch 00024-02-E2-C3: a bundle that declares witnesses is verified, never executed by a
+  // consumer (UC-3: src/execute.mjs refuses it), and a FULL interface is not partial.
+  const verifyOnly = witnesses.length > 0;
+  const verifySection = !verifyOnly ? null : `## Verify
+
+Use a verifier you obtained independently of this bundle, for example the one in
+the repository that built it (https://github.com/acedward/compact-off-chain-circuits):
+
+\`\`\`sh
+node <compact-off-chain-circuits>/src/verify.mjs --bundle-url ${url} \\
+  ${idx} ${adr} --level 3
+\`\`\`
+
+This interface declares witnesses (${witnesses.map((w) => `\`${w}\``).join(', ')}): its circuits take
+private inputs a consumer does not have, so they are verified, not executed. Without
+\`--bundle-url\` the verifier takes the URL from the contract's latest public-interface
+event. It downloads \`${INDEX_FILE}\`, checks it against the commitment on chain, then
+downloads each file it lists into a private temporary directory and checks its sha256
+(Level 1); it checks that every verifier key is the key the chain stores for that entry
+point (Level 2); with \`--level 3\` it recompiles \`${compact.interface}\` with your
+installed compact (this bundle was built with ${compact.compiler}${compact.flags ? `, flags \`${compact.flags.join(' ')}\`` : ''}) and checks that it reproduces the
+shipped keys, \`out/contract/index.js\` and \`out/compiler/contract-info.json\` byte for
+byte. Nothing is executed or submitted and no proof is produced. Files that
+\`${INDEX_FILE}\` does not list are never fetched.
+
+Offline, check a local copy of this directory and supply the inputs directly:
+
+\`\`\`sh
+node <compact-off-chain-circuits>/src/verify.mjs --bundle <this directory> \\
+  --event-payload <payload hex, 256 bytes per part> --state <state hex or file> --level 3
+\`\`\`
+`;
+  const sourceSentence = interfaceKind === 'full'
+    ? `\`src/\` is the
+published source: the contract's WHOLE source — a FULL interface, every circuit of the
+contract is published — and the modules it imports.`
+    : `\`src/\` is the
+published source: the interface and the modules it imports. It is deliberately
+partial — the contract has circuits that are not published here.`;
+  const licence = extras.length === 0 ? '' : `
+## Licence and provenance
+
+${extras.map((f) => `\`${f}\``).join(', ')} ${extras.length === 1 ? 'states' : 'state'} the licences, attributions and provenance of the
+files here. ${extras.length === 1 ? 'It is' : 'They are'} listed in \`${INDEX_FILE}\` like every other file.
+`;
   return `# Published contract interface
 
 This directory is the off-chain interface bundle for a Midnight contract. The
@@ -177,7 +242,7 @@ that \`${INDEX_FILE}\` in its public-interface event, which its
 | Published circuits | ${circuits.map((c) => `\`${c}\``).join(', ')} |
 | Compiler / language / runtime | ${compact.compiler} / ${compact.language} / ${compact.runtime}${compact.flags ? ` (\`${compact.flags.join(' ')}\`)` : ''} |
 
-## Verify and run a read
+${verifySection ?? `## Verify and run a read
 
 Use a verifier you obtained independently of this bundle, for example the one in
 the repository that built it (https://github.com/acedward/compact-off-chain-circuits):
@@ -206,12 +271,10 @@ node <compact-off-chain-circuits>/src/verify.mjs --bundle <this directory> \\
 Add \`--level 3\` to recompile \`${compact.interface}\` with your installed compact
 (this bundle was built with ${compact.compiler}${compact.flags ? `, flags \`${compact.flags.join(' ')}\`` : ''}) and check that it reproduces the shipped
 keys, \`out/contract/index.js\` and \`out/compiler/contract-info.json\` byte for byte.
-
+`}
 ## What is here
 
-\`${INDEX_FILE}\` lists every other file with its sha256 and size. \`src/\` is the
-published source: the interface and the modules it imports. It is deliberately
-partial — the contract has circuits that are not published here. \`out/\` is what
+\`${INDEX_FILE}\` lists every other file with its sha256 and size. ${sourceSentence} \`out/\` is what
 that source compiles to: one verifier key per published circuit, the generated
 wrapper that executes them, and the compiler's contract description. Prover keys
 and zkir are not needed to read and are not shipped.
@@ -219,7 +282,7 @@ and zkir are not needed to read and are not shipped.
 Upload this directory as is, so that the URL above serves its \`${INDEX_FILE}\` and
 each listed file is served at its path relative to it. A changed or missing
 listed file fails verification; extra files on the host are ignored.
-`;
+${licence}`;
 }
 
 /**

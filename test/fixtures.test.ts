@@ -116,6 +116,14 @@ describe('fixtures/simulator', () => {
 });
 
 describe('fixtures/bundles: each case is what cases.json says (reference public-interface-verify, Levels 1-2)', () => {
+  it('every case ships the licences and provenance of the files it copies — LICENSE, NOTICE, SOURCE.md, listed in index.json (audit 02 E2-C1)', () => {
+    for (const c of cases) {
+      const listed = (JSON.parse(readFileSync(join(dirOf(c), 'index.json'), 'utf8')) as { files: { path: string }[] }).files.map((f) => f.path);
+      for (const f of ['LICENSE', 'NOTICE', 'SOURCE.md']) expect(listed, `${c.case}: ${f}`).toContain(f);
+      expect(readFileSync(join(dirOf(c), 'NOTICE'), 'utf8'), c.case).toContain('Copyright (c) 2025 Zeppelin Group Ltd');
+    }
+  });
+
   it('six cases, all built from LSUNPI, all one-part pointers', () => {
     expect(cases.map((c) => c.case)).toEqual(['valid', 'tampered-file', 'wrong-hash', 'over-size-cap', 'loopback-host', 'compiler-not-installed']);
     for (const c of cases) {

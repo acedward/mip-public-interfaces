@@ -97,13 +97,13 @@ export function verifyOnlyCircuits(interfaceOut, circuits, witnesses) {
  * witnesses the interface declares) and `verifyOnly` (the published circuits that
  * take one: verified at Levels 1-3, never executed).
  */
-export function deployCheck({ interfaceSrc, interfaceOut, fullOut, outDir, url: requestedUrl, address, indexerUrl, runtimeDep }) {
+export function deployCheck({ interfaceSrc, interfaceOut, fullOut, outDir, url: requestedUrl, address, indexerUrl, runtimeDep, extraFiles, interfaceKind }) {
   const url = indexUrlFor(requestedUrl);
   if (!existsSync(fullOut)) throw new RefusedError(`full build not found: ${fullOut} (build the deployed contract first)`);
 
   let bundle;
   try {
-    bundle = assembleBundle({ interfaceSrc, interfaceOut, outDir, url, address, indexerUrl, runtimeDep });
+    bundle = assembleBundle({ interfaceSrc, interfaceOut, outDir, url, address, indexerUrl, runtimeDep, extraFiles, interfaceKind });
   } catch (e) {
     if (e instanceof IndexError) throw new RefusedError(e.message);
     throw e;
