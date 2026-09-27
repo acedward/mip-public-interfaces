@@ -1,7 +1,8 @@
 # deployments/
 
-The contract matrix the generator reads and writes, and deployment records. A
-local-chain run writes its record to `out/local-deployment.json`, which is not committed.
+The contract matrix the generator reads and writes, and deployment records. A local-chain run (`scripts/deploy-and-publish.ts`, `scripts/publish-pointer.ts`) writes its record to
+`MN_DEPLOYMENT_FILE` — by convention `out/local-deployment.json` — which is not committed: addresses,
+deploy and call transactions, and every pointer publication (segment, parts, intent hash, transaction, block).
 
 | File | What | Written by |
 |---|---|---|
