@@ -1,7 +1,7 @@
 {
   "bundle": "v1",
   "commitment": "ecmh-jubjub-grouphash",
-  "hash": "723ff038e153965e94e5969c36b20fa03021c9b1b5ec5de377d8e4c87d2dbace",
+  "hash": "cc10b4d3baea5bf1c41d504d75ea3ad0700e419cfff25f8dc689e1a0b99c278f",
   "compiler": {
     "name": "compactc",
     "version": "0.33.0"
@@ -19,8 +19,8 @@
     },
     {
       "path": "README.md",
-      "sha256": "90bec68b058d45a2590cd6628762fbaa65c57e47cc123dfa2a89bdc2a294d537",
-      "size": 3130
+      "sha256": "e1f207ca0ff0922278243a4004d67c26207b15aabe6119a49e2787c3357e45d2",
+      "size": 3326
     },
     {
       "path": "SOURCE.md",

@@ -15,11 +15,13 @@ that `index.json` in its public-interface event, which its
 
 ## Verify
 
-Use a verifier you obtained independently of this bundle, for example the one in
-the repository that built it (https://github.com/acedward/compact-off-chain-circuits):
+Use a verifier you obtained independently of this bundle, for example the patched
+reference tools of https://github.com/acedward/mip-public-interfaces
+(`tools/public-interface`: they read multi-part pointers and verify circuits that take
+witnesses; the upstream tools of compact-off-chain-circuits read one-part pointers only):
 
 ```sh
-node <compact-off-chain-circuits>/src/verify.mjs --bundle-url http://bundles/fixtures/tampered-file/index.json \
+node <mip-public-interfaces>/tools/public-interface/src/verify.mjs --bundle-url http://bundles/fixtures/tampered-file/index.json \
   --indexer <graphql url> --address <hex> --level 3
 ```
 
@@ -38,7 +40,7 @@ byte. Nothing is executed or submitted and no proof is produced. Files that
 Offline, check a local copy of this directory and supply the inputs directly:
 
 ```sh
-node <compact-off-chain-circuits>/src/verify.mjs --bundle <this directory> \
+node <mip-public-interfaces>/tools/public-interface/src/verify.mjs --bundle <this directory> \
   --event-payload <payload hex, 256 bytes per part> --state <state hex or file> --level 3
 ```
 

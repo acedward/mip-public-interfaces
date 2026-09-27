@@ -185,13 +185,17 @@ function bundleReadme({ url, address, indexerUrl, circuits, compact, witnesses =
   // Patch 00024-02-E2-C3: a bundle that declares witnesses is verified, never executed by a
   // consumer (UC-3: src/execute.mjs refuses it), and a FULL interface is not partial.
   const verifyOnly = witnesses.length > 0;
+  // The upstream tools read one-part pointers only and refuse witness circuits; the patched copy
+  // (this one: UC-2 multi-part, UC-3 verify-only) reads both (02-E contracts review).
   const verifySection = !verifyOnly ? null : `## Verify
 
-Use a verifier you obtained independently of this bundle, for example the one in
-the repository that built it (https://github.com/acedward/compact-off-chain-circuits):
+Use a verifier you obtained independently of this bundle, for example the patched
+reference tools of https://github.com/acedward/mip-public-interfaces
+(\`tools/public-interface\`: they read multi-part pointers and verify circuits that take
+witnesses; the upstream tools of compact-off-chain-circuits read one-part pointers only):
 
 \`\`\`sh
-node <compact-off-chain-circuits>/src/verify.mjs --bundle-url ${url} \\
+node <mip-public-interfaces>/tools/public-interface/src/verify.mjs --bundle-url ${url} \\
   ${idx} ${adr} --level 3
 \`\`\`
 
@@ -210,7 +214,7 @@ byte. Nothing is executed or submitted and no proof is produced. Files that
 Offline, check a local copy of this directory and supply the inputs directly:
 
 \`\`\`sh
-node <compact-off-chain-circuits>/src/verify.mjs --bundle <this directory> \\
+node <mip-public-interfaces>/tools/public-interface/src/verify.mjs --bundle <this directory> \\
   --event-payload <payload hex, 256 bytes per part> --state <state hex or file> --level 3
 \`\`\`
 `;

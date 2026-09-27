@@ -171,6 +171,10 @@ describe('each bundle is a FULL interface of its contract', () => {
     expect(readme).not.toMatch(/--circuit /);
     expect(readme).toMatch(/--level 3/);
     expect(readme).toContain('`LICENSE`, `NOTICE`, `SOURCE.md` state the licences');
+    // …and names a verifier that can read it: the patched tools (UPROMPI's pointer has 2 parts; the
+    // upstream parser takes exactly 256 bytes — 02-E contracts review).
+    expect(readme.match(/node <mip-public-interfaces>\/tools\/public-interface\/src\/verify\.mjs/g)).toHaveLength(2);
+    expect(readme).not.toContain('node <compact-off-chain-circuits>');
   });
 
   it('UPROMPI: the only multi-part pointer — a URL over 224 bytes, 2 parts (02-B3)', () => {
