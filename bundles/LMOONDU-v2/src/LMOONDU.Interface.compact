@@ -1,0 +1,379 @@
+// SPDX-License-Identifier: Apache-2.0
+//
+// GENERATED FILE — do not edit. Produced by scripts/generate-du-contracts.ts (scripts/du-interfaces.ts).
+//
+// The PUBLIC INTERFACE of LMOONDU (Ledger Moon · DU), HIDDEN: the private form of the Public
+// Interfaces draft (compare its example compact-examples/fungible-private/Interface.compact).
+// The deployed contract is contracts/generated/LMOONDU.compact.
+//
+// WHAT IS HIDDEN, AND WHAT IS NOT
+//
+// This file imports no module. It declares the deployed contract's ledger itself: 8
+// fields, in the deployed order and with the deployed types, named hidden1 to hidden8. A
+// verifier key depends on a circuit's logic and on the positions and types of the ledger
+// slots it touches, not on any name, so the circuits below compile to the keys the
+// contract deployed.
+//
+// Published: EVERY impure circuit of LMOONDU (spec 00024 Q9), under its deployed entry point
+// name, with its code — 16 circuits: name, symbol, decimals, totalSupply, balanceOf, transfer, mint, publishName, publishSymbol, publishDecimals, publishRepository, publishName2, publishDescription, clearDescription, publishDescription2, publishBundle.
+// The module circuits they call are written out below as local circuits (each body as in
+// its module; only the ledger names differ). The emitting circuits (every MIP-0018
+// declaration and publishBundle) take the emitter secret, a witness: a consumer verifies
+// them at Levels 1-3 but cannot execute them.
+//
+// Hidden: the contract's source as written (its module structure and imports), its
+// constructor, the original ledger field names, and its pure circuit `kind()` (a constant; it
+// has no verifier key, so it cannot be verified and is not published).
+//
+// Still visible, here or on chain: the ledger's shape (8 fields, their positions and
+// types) and its values, every entry point name, every verifier key, and the witnesses the
+// published circuits take (emitterSecret, wit_FungibleTokenSK).
+//
+// Code adapted from: contracts/TokenMetadata.compact (the MIP-0018 module, Apache-2.0),
+// contracts/OffChainInterface.compact (the Public Interfaces module, Apache-2.0), and
+// OpenZeppelin Compact Contracts v0.4.0-alpha.3 (MIT, (c) Zeppelin Group Ltd):
+// token/FungibleToken.compact, utils/Utils.compact — see the bundle's NOTICE and SOURCE.md.
+
+pragma language_version >= 0.26.0;
+
+import CompactStandardLibrary;
+
+export { ContractAddress, Either, Maybe };
+
+// The deployed ledger, slot by slot. Not exported: nothing reads it by name.
+sealed ledger hidden1: Bytes<32>;
+ledger hidden2: Boolean;
+ledger hidden3: Map<Either<Bytes<32>, ContractAddress>, Uint<128>>;
+ledger hidden4: Map<Either<Bytes<32>, ContractAddress>, Map<Either<Bytes<32>, ContractAddress>, Uint<128>>>;
+ledger hidden5: Uint<128>;
+sealed ledger hidden6: Opaque<"string">;
+sealed ledger hidden7: Opaque<"string">;
+sealed ledger hidden8: Uint<8>;
+
+witness emitterSecret(): Bytes<32>;
+witness wit_FungibleTokenSK(): Bytes<32>;
+
+// --- MIP-0018 (contracts/TokenMetadata.compact, Apache-2.0): the circuits the declarations call ---
+
+circuit tm_EVENT_NAME(): Bytes<32> {
+  return pad(32, "mip-0018:token-metadata[v1]");
+}
+
+circuit tm_ONE_PART_VALUE_SIZE(): Uint<16> {
+  return 188;
+}
+
+pure circuit tm_emitterSecretHashOf(secret: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "mip-0018:emitter:"), secret]);
+}
+
+/** Every emitting circuit calls this first: the caller must know the emitter secret (spec 00024 Q12). */
+circuit tm_assertEmitter(): [] {
+  assert(tm_emitterSecretHashOf(emitterSecret()) == hidden1,
+         "TokenMetadata: caller is not the emitter");
+}
+
+circuit tm_emitHead(
+  domainSep: Bytes<32>,
+  kind: Uint<8>,
+  key: Bytes<32>,
+  valType: Uint<8>,
+  valLen: Uint<16>,
+  valueHead: Bytes<188>
+): [] {
+  emit(Misc {
+    name: tm_EVENT_NAME(),
+    payload: Bytes[...domainSep, kind, ...key, valType, ...(valLen as Bytes<2>), ...valueHead]
+  });
+}
+
+circuit tm_emitPart(part: Bytes<256>): [] {
+  emit(Misc { name: tm_EVENT_NAME(), payload: part });
+}
+
+circuit tm_emitTokenMetadata(
+  domainSep: Bytes<32>,
+  kind: Uint<8>,
+  key: Bytes<32>,
+  valType: Uint<8>,
+  valLen: Uint<16>,
+  value: Bytes<188>
+): [] {
+  assert(valLen <= tm_ONE_PART_VALUE_SIZE(),
+         "TokenMetadata: a one-part value holds at most 188 bytes");
+  tm_emitHead(domainSep, kind, key, valType, valLen, value);
+}
+
+// --- Public Interfaces (contracts/OffChainInterface.compact, Apache-2.0) ---
+
+circuit oci_publishBundle(payload: Bytes<256>): [] {
+  emit(Misc { name: pad(32, "mip-xxxx:public-interface[v1]"), payload: disclose(payload) });
+}
+
+// --- OpenZeppelin Compact Contracts v0.4.0-alpha.3 (MIT, (c) Zeppelin Group Ltd):
+// token/FungibleToken, utils/Utils — the circuits the published token circuits call ---
+
+pure circuit oz_utils_canonicalize<T1, T2>(
+  value: Either<T1, T2>
+): Either<T1, T2> {
+  return value.is_left
+    ? Either<T1, T2>{ is_left: true, left: value.left, right: default<T2> }
+    : Either<T1, T2>{ is_left: false, left: default<T1>, right: value.right };
+}
+
+pure circuit oz_utils_zeroAccount(): Either<Bytes<32>, ContractAddress> {
+  return Either<Bytes<32>, ContractAddress> {
+    is_left: true, left: default<Bytes<32>>, right: default<ContractAddress>
+  };
+}
+
+pure circuit oz_utils_isTargetZero(target: Either<Bytes<32>, ContractAddress>): Boolean {
+  if (target.is_left) {
+    return target.left == default<Bytes<32>>;
+  } else {
+    return target.right == default<ContractAddress>;
+  }
+}
+
+pure circuit oz_utils_computeAccountId(secretKey: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<1, Bytes<32>>>([secretKey]);
+}
+
+circuit oz_ft_assertInitialized(): [] {
+  assert(hidden2, "FungibleToken: contract not initialized");
+}
+
+circuit oz_ft_name(): Opaque<"string"> {
+  oz_ft_assertInitialized();
+  return hidden6;
+}
+
+circuit oz_ft_symbol(): Opaque<"string"> {
+  oz_ft_assertInitialized();
+  return hidden7;
+}
+
+circuit oz_ft_decimals(): Uint<8> {
+  oz_ft_assertInitialized();
+  return hidden8;
+}
+
+circuit oz_ft_totalSupply(): Uint<128> {
+  oz_ft_assertInitialized();
+  return hidden5;
+}
+
+circuit oz_ft_balanceOf(account: Either<Bytes<32>, ContractAddress>): Uint<128> {
+  oz_ft_assertInitialized();
+  const canonAcct = oz_utils_canonicalize<Bytes<32>, ContractAddress>(account);
+  if (!hidden3.member(disclose(canonAcct))) {
+    return 0;
+  }
+  return hidden3.lookup(disclose(canonAcct));
+}
+
+circuit oz_ft__computeAccountId(): Bytes<32> {
+  return oz_utils_computeAccountId(wit_FungibleTokenSK());
+}
+
+circuit oz_ft__update(fromAddress: Either<Bytes<32>, ContractAddress>,
+                      to: Either<Bytes<32>, ContractAddress>,
+                      value: Uint<128>
+                      ): [] {
+  oz_ft_assertInitialized();
+  const canonFrom = oz_utils_canonicalize<Bytes<32>, ContractAddress>(fromAddress);
+  const canonTo = oz_utils_canonicalize<Bytes<32>, ContractAddress>(to);
+  if (oz_utils_isTargetZero(disclose(canonFrom))) {
+    const MAX_UINT128 = 340282366920938463463374607431768211455;
+    assert(MAX_UINT128 - hidden5 >= value, "FungibleToken: arithmetic overflow");
+    hidden5 = disclose(hidden5 + value as Uint<128>);
+  } else {
+    const fromBal = oz_ft_balanceOf(canonFrom);
+    assert(fromBal >= value, "FungibleToken: insufficient balance");
+    hidden3.insert(disclose(canonFrom), disclose(fromBal - value as Uint<128>));
+  }
+  if (oz_utils_isTargetZero(disclose(canonTo))) {
+    hidden5 = disclose(hidden5 - value as Uint<128>);
+  } else {
+    const toBal = oz_ft_balanceOf(canonTo);
+    hidden3.insert(disclose(canonTo), disclose(toBal + value as Uint<128>));
+  }
+}
+
+circuit oz_ft__unsafeUncheckedTransfer(
+  fromAddress: Either<Bytes<32>, ContractAddress>,
+  to: Either<Bytes<32>, ContractAddress>,
+  value: Uint<128>
+): [] {
+  oz_ft_assertInitialized();
+  assert(!oz_utils_isTargetZero(fromAddress), "FungibleToken: invalid sender");
+  assert(!oz_utils_isTargetZero(to), "FungibleToken: invalid receiver");
+  oz_ft__update(fromAddress, to, value);
+}
+
+circuit oz_ft__unsafeTransfer(
+  to: Either<Bytes<32>, ContractAddress>,
+  value: Uint<128>
+): Boolean {
+  oz_ft_assertInitialized();
+  const owner = left<Bytes<32>, ContractAddress>(oz_ft__computeAccountId());
+  oz_ft__unsafeUncheckedTransfer(owner, to, value);
+  return true;
+}
+
+circuit oz_ft_transfer(
+  to: Either<Bytes<32>, ContractAddress>,
+  value: Uint<128>
+): Boolean {
+  oz_ft_assertInitialized();
+  const isContractAddr = !to.is_left;
+  assert(!isContractAddr, "FungibleToken: unsafe transfer");
+  return oz_ft__unsafeTransfer(to, value);
+}
+
+circuit oz_ft__unsafeMint(
+  account: Either<Bytes<32>, ContractAddress>,
+  value: Uint<128>
+): [] {
+  oz_ft_assertInitialized();
+  assert(!oz_utils_isTargetZero(account), "FungibleToken: invalid receiver");
+  oz_ft__update(oz_utils_zeroAccount(), account, value);
+}
+
+circuit oz_ft__mint(account: Either<Bytes<32>, ContractAddress>, value: Uint<128>): [] {
+  oz_ft_assertInitialized();
+  const isContractAddr = !account.is_left;
+  assert(!isContractAddr, "FungibleToken: unsafe transfer");
+  oz_ft__unsafeMint(account, value);
+}
+
+// --- the published token circuits ---
+
+export circuit name(): Opaque<"string"> {
+  return oz_ft_name();
+}
+
+export circuit symbol(): Opaque<"string"> {
+  return oz_ft_symbol();
+}
+
+export circuit decimals(): Uint<8> {
+  return oz_ft_decimals();
+}
+
+export circuit totalSupply(): Uint<128> {
+  return oz_ft_totalSupply();
+}
+
+export circuit balanceOf(account: Either<Bytes<32>, ContractAddress>): Uint<128> {
+  return oz_ft_balanceOf(account);
+}
+
+/** Moves `value` from the caller's account (derived from the `wit_FungibleTokenSK` witness) to `to`. */
+export circuit transfer(to: Either<Bytes<32>, ContractAddress>, value: Uint<128>): Boolean {
+  return oz_ft_transfer(disclose(to), disclose(value));
+}
+
+/** Credits `value` to `account` in contract state. */
+export circuit mint(account: Either<Bytes<32>, ContractAddress>, value: Uint<128>): [] {
+  oz_ft__mint(disclose(account), disclose(value));
+}
+
+// --- the published MIP-0018 declarations (each ONE package; every byte a literal) ---
+
+/**
+ * @description MIP-0018 (publishMetadata): ONE declaration, one TokenMetadata event, every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit publishName(): [] {
+  tm_assertEmitter();
+  // name = "Ledger Moon · DU" (val-type 1 string, val-len 17)
+  tm_emitTokenMetadata(pad(32, "umbra:lmoondu"), 2, pad(32, "name"), 1, 17, Bytes[
+    0x4c, 0x65, 0x64, 0x67, 0x65, 0x72, 0x20, 0x4d, 0x6f, 0x6f, 0x6e, 0x20,
+    0xc2, 0xb7, 0x20, 0x44, 0x55, ...pad(171, "")
+  ]);
+}
+
+/**
+ * @description MIP-0018 (publishMetadata): ONE declaration, one TokenMetadata event, every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit publishSymbol(): [] {
+  tm_assertEmitter();
+  // symbol = "LMOONDU" (val-type 1 string, val-len 7)
+  tm_emitTokenMetadata(pad(32, "umbra:lmoondu"), 2, pad(32, "symbol"), 1, 7, pad(188, "LMOONDU"));
+}
+
+/**
+ * @description MIP-0018 (publishMetadata): ONE declaration, one TokenMetadata event, every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit publishDecimals(): [] {
+  tm_assertEmitter();
+  // decimals = "8" (val-type 2 integer, val-len 16)
+  tm_emitTokenMetadata(pad(32, "umbra:lmoondu"), 2, pad(32, "decimals"), 2, 16, Bytes[0x08, ...pad(187, "")]);
+}
+
+/**
+ * @description MIP-0018 (publishRepository): ONE declaration, one TokenMetadata event, every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit publishRepository(): [] {
+  tm_assertEmitter();
+  // repository = "https://github.com/acedward/mip-public-interfaces/blob/main/contracts/generated/LMOONDU.compact" (val-type 4 URI, val-len 95)
+  tm_emitTokenMetadata(pad(32, "umbra:lmoondu"), 2, pad(32, "repository"), 4, 95, pad(188, "https://github.com/acedward/mip-public-interfaces/blob/main/contracts/generated/LMOONDU.compact"));
+}
+
+/**
+ * @description MIP-0018 (setMetadata): ONE declaration, one TokenMetadata event, every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit publishName2(): [] {
+  tm_assertEmitter();
+  // name = "Ledger Moon · DU (renamed)" (val-type 1 string, val-len 27)
+  tm_emitTokenMetadata(pad(32, "umbra:lmoondu"), 2, pad(32, "name"), 1, 27, Bytes[
+    0x4c, 0x65, 0x64, 0x67, 0x65, 0x72, 0x20, 0x4d, 0x6f, 0x6f, 0x6e, 0x20,
+    0xc2, 0xb7, 0x20, 0x44, 0x55, 0x20, 0x28, 0x72, 0x65, 0x6e, 0x61, 0x6d,
+    0x65, 0x64, 0x29, ...pad(161, "")
+  ]);
+}
+
+/**
+ * @description MIP-0018 (setMetadata): ONE declaration, one TokenMetadata event, every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit publishDescription(): [] {
+  tm_assertEmitter();
+  // description = "A ledger token that renamed itself in a later block." (val-type 1 string, val-len 52)
+  tm_emitTokenMetadata(pad(32, "umbra:lmoondu"), 2, pad(32, "description"), 1, 52, pad(188, "A ledger token that renamed itself in a later block."));
+}
+
+/**
+ * @description MIP-0018 (setMetadata): ONE declaration, one TokenMetadata event, every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit clearDescription(): [] {
+  tm_assertEmitter();
+  // description = Null — the current value is cleared, the history is not (val-type 5 Null, val-len 0)
+  tm_emitTokenMetadata(pad(32, "umbra:lmoondu"), 2, pad(32, "description"), 5, 0, pad(188, ""));
+}
+
+/**
+ * @description MIP-0018 (setMetadata): ONE declaration, 2 TokenMetadata events (2 parts, one intent), every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit publishDescription2(): [] {
+  tm_assertEmitter();
+  // description = "Ledger Moon cleared its description with a Null declaration and then declared this one: a value longer than one even… (val-type 1 string, val-len 377, 2 parts)
+  tm_emitHead(pad(32, "umbra:lmoondu"), 2, pad(32, "description"), 1, 377, pad(188, "Ledger Moon cleared its description with a Null declaration and then declared this one: a value longer than one event can hold, published as a single MIP-0018 declaration in two parts from"));
+  // part 2 of 2
+  tm_emitPart(pad(256, " one circuit call. The indexer positions the package by its first part, so this description is the current value and the cleared one stays in the history. Nothing in these bytes is framing."));
+}
+
+// --- the published Public Interfaces circuit ---
+
+/** Emits ONE 256-byte part of this contract's interface pointer (`mip-xxxx:public-interface[v1]`). Emitter only. */
+export circuit publishBundle(payload: Bytes<256>): [] {
+  tm_assertEmitter();
+  oci_publishBundle(payload);
+}

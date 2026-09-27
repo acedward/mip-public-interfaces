@@ -10,6 +10,8 @@
 # run in the Compact simulator, verifier keys installed as a deploy installs them):
 #   out/sim/<ID>/event-payload.hex   the publishBundle parts the contract emitted, merged
 #   out/sim/<ID>/state.hex           the contract's serialized state
+# A second bundle of a contract (a record with `contract`, e.g. LMOONDU-v2 for the P2 pair)
+# is verified against that contract's state, with its own recorded payload as the event.
 # Result: out/sim/<ID>/verify-l3.json (the tool's --json report); the script fails unless
 # every bundle reaches Level 3.
 #
@@ -48,22 +50,31 @@ export COMPACT_BIN="$SHIM/compact"
 echo "== $("$COMPACT_BIN" compile --version | head -1) (COMPACT_BIN=$COMPACT_BIN)"
 
 cd "$ROOT"
-node --import tsx scripts/simulate-pi.ts "$@"
-
 ids=("$@")
 if [ "${#ids[@]}" -eq 0 ]; then
   mapfile -t ids < <(node -e 'for (const b of require("./deployments/bundles.json").bundles) console.log(b.id)')
 fi
+# The contracts whose plans to simulate: each bundle's own contract (a second bundle's `contract`).
+mapfile -t contracts < <(node -e 'const all=require("./deployments/bundles.json").bundles; const s=new Set(); for (const id of process.argv.slice(1)) { const b=all.find((x)=>x.id===id); if(!b) { console.error("no bundle "+id); process.exit(3); } s.add(b.contract ?? b.id); } for (const c of s) console.log(c)' "${ids[@]}")
+node --import tsx scripts/simulate-pi.ts "${contracts[@]}"
 
 status=0
 for id in "${ids[@]}"; do
   path="$(node -e 'const b=require("./deployments/bundles.json").bundles.find((x)=>x.id===process.argv[1]); if(!b) process.exit(3); console.log(b.path)' "$id")"
+  contract="$(node -e 'const b=require("./deployments/bundles.json").bundles.find((x)=>x.id===process.argv[1]); console.log(b.contract ?? b.id)' "$id")"
   out="out/sim/$id"
-  echo; echo "== $id: bundles/$path — Level 3 (recompile with keys)"
+  mkdir -p "$out"
+  if [ "$contract" = "$id" ]; then
+    payload="$(cat "$out/event-payload.hex")"
+  else
+    # a second bundle: its own pointer, the contract's simulated state
+    payload="$(node -e 'console.log(require("./deployments/bundles.json").bundles.find((x)=>x.id===process.argv[1]).payloadHex)' "$id")"
+  fi
+  echo; echo "== $id: bundles/$path — Level 3 (recompile with keys) against $contract's state"
   start=$(date +%s)
   set +e
   node tools/public-interface/src/verify.mjs --bundle "bundles/$path" \
-    --event-payload "$(cat "$out/event-payload.hex")" --state "$out/state.hex" --level 3 --json > "$out/verify-l3.json"
+    --event-payload "$payload" --state "out/sim/$contract/state.hex" --level 3 --json > "$out/verify-l3.json"
   rc=$?
   set -e
   secs=$(( $(date +%s) - start ))

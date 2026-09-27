@@ -1,8 +1,8 @@
 /**
  * The deployment record and the deploy itself (plain, or staged when a contract does not fit
  * one block — spec 00024 Q20 (a), scripts/staged-deploy.ts), shared by deploy-and-publish.ts
- * (the matrix rows and their plans) and publish-pointer.ts (extra instances and further
- * pointers). The deploy logic is the source repository's (acedward/mip-0018-midnight-contracts
+ * (the matrix rows and their plans — the PI set and the DU set), publish-pointer.ts (extra
+ * instances and further pointers) and publish-dual-intent.ts (the P4 transaction). The deploy logic is the source repository's (acedward/mip-0018-midnight-contracts
  * `scripts/deploy-and-publish.ts` @ cb6c675, see scripts/SOURCE.md), unchanged in substance:
  * midnight-js's own deploy when it fits within the block budget, else a subset deploy plus one
  * maintenance `VerifierKeyInsert` transaction per remaining key, all before the first call.
@@ -20,7 +20,7 @@ import {
 import { SucceedEntirely } from '@midnight-ntwrk/midnight-js-types';
 import { ContractState as LedgerContractState, type LedgerParameters, type NormalizedCost } from '@midnightntwrk/ledger-v9';
 import { type PointerPublication, errorText, log } from './chain.js';
-import { artifactSha256, managedDirectory, REPOSITORY_ROOT, sha256Hex, type PiPrivateState } from './profile.js';
+import { accountIdOf, artifactSha256, bytesOfHex, hexOf, holderBytes, managedDirectory, pad, REPOSITORY_ROOT, sha256Hex, type PiPrivateState } from './profile.js';
 import {
   STAGED_DEPLOY_BLOCK_BUDGET,
   blockShare,
@@ -32,6 +32,8 @@ import {
 } from './staged-deploy.js';
 
 export const MATRIX_FILE = path.join(REPOSITORY_ROOT, 'deployments', 'generated-matrix.json');
+/** The DU set's plan (scripts/generate-du-contracts.ts, project 00024-03). */
+export const DUAL_MATRIX_FILE = path.join(REPOSITORY_ROOT, 'deployments', 'dual-matrix.json');
 export const BUNDLES_FILE = path.join(REPOSITORY_ROOT, 'deployments', 'bundles.json');
 
 // ---------------------------------------------------------------------------
@@ -49,7 +51,7 @@ export interface PlanStep {
   nonce?: string | null;
   parts?: number;
   url?: string;
-  declaration?: { key: string; parts: number; payloadHex: string; text: string | null };
+  declaration?: { key: string; kind?: number; parts: number; payloadHex: string; text: string | null };
 }
 export interface MatrixRow {
   id: string;
@@ -57,6 +59,8 @@ export interface MatrixRow {
   template: string;
   kind: number;
   constructorArgs: { name_: string; symbol_: string };
+  /** FULL (the PI set) or HIDDEN (the DU set); absent in the PI plan, which is FULL throughout. */
+  interface?: 'FULL' | 'HIDDEN';
   domain?: string | null;
   pieces: { piece: string; domain: string; domainSepHex: string }[] | null;
   steps: PlanStep[];
@@ -72,8 +76,60 @@ export interface BundleRecord {
   circuits: string[];
 }
 
+/** The PI set's plan. */
 export const readMatrix = (): { rows: MatrixRow[] } => JSON.parse(readFileSync(MATRIX_FILE, 'utf8')) as { rows: MatrixRow[] };
+/** The DU set's plan. */
+export const readDualMatrix = (): { rows: MatrixRow[] } => JSON.parse(readFileSync(DUAL_MATRIX_FILE, 'utf8')) as { rows: MatrixRow[] };
+/** Every row of both plans: the PI set, then the DU set. */
+export const readAllRows = (): MatrixRow[] => [...readMatrix().rows, ...readDualMatrix().rows];
 export const readBundles = (): { bundles: BundleRecord[] } => JSON.parse(readFileSync(BUNDLES_FILE, 'utf8')) as { bundles: BundleRecord[] };
+
+const eitherLeft = (left: Uint8Array) => ({ is_left: true, left, right: { bytes: new Uint8Array(32) } });
+
+/**
+ * The circuit arguments of one plan step on a live chain, and the recipient the record names:
+ * - `emit` / `publishBundle`: none here (a declaration takes none; a pointer goes through the
+ *   Multi-Part Event publisher);
+ * - a ledger mint (`token: 'ledger'`): `Either<Bytes<32>, ContractAddress>` — the owner is
+ *   OpenZeppelin's `computeAccountId(sk)`, any other label its `holderBytes`;
+ * - a shielded mint: to the DEPLOYER's Zswap coin key (a Zswap output is encrypted to its
+ *   recipient, so midnight-js must resolve the recipient's encryption key — the source
+ *   repository's rule), nonce `pad(32, step.nonce)`; a collection piece takes its domain first;
+ * - an unshielded mint (the DU set: UMETDU `mint`, DAURDU `mintUnshielded`): a UTxO for any
+ *   32-byte user address — the plan's label as `holderBytes`, as the simulator corpus uses;
+ *   recipient `Either<ContractAddress, UserAddress>`;
+ * - a transfer: `Either<Bytes<32>, ContractAddress>` of the label's `holderBytes`.
+ */
+export function stepArgs(
+  row: MatrixRow,
+  step: PlanStep,
+  index: number,
+  ctx: { fungibleSk: Uint8Array; zswapRecipient: { bytes: Uint8Array } },
+): { args: unknown[]; recipient?: string } {
+  if (step.kind === 'transfer') {
+    const to = holderBytes(step.to ?? '');
+    return { args: [eitherLeft(to), BigInt(step.amount ?? '0')], recipient: hexOf(to) };
+  }
+  if (step.kind !== 'mint') return { args: [] };
+  if (step.token === 'ledger') {
+    const to = step.to === 'owner' ? accountIdOf(ctx.fungibleSk) : holderBytes(step.to ?? '');
+    return { args: [eitherLeft(to), BigInt(step.amount ?? '0')], recipient: hexOf(to) };
+  }
+  if (step.token === 'shielded') {
+    const nonce = pad(32, step.nonce ?? `${row.id}:${index}`);
+    if (step.circuit === 'mintPiece') {
+      const domainSep = row.pieces?.find((p) => p.piece === step.piece)?.domainSepHex;
+      if (!domainSep) throw new Error(`${row.id}: unknown piece ${step.piece}`);
+      return { args: [bytesOfHex(domainSep), ctx.zswapRecipient, nonce], recipient: 'deployer' };
+    }
+    return { args: [ctx.zswapRecipient, BigInt(step.amount ?? '0'), nonce], recipient: 'deployer' };
+  }
+  if (step.token === 'unshielded') {
+    const to = holderBytes(step.to ?? '');
+    return { args: [{ is_left: false, left: { bytes: new Uint8Array(32) }, right: { bytes: to } }, BigInt(step.amount ?? '0')], recipient: hexOf(to) };
+  }
+  throw new Error(`${row.id}: unknown mint step ${step.circuit}`);
+}
 
 /** A compiled contract's provable circuits (each one verifier key on chain), in compiled order. */
 export const provableCircuits = (contract: string): string[] =>

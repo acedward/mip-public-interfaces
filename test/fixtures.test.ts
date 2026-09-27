@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //
-// The fixtures the token indexer consumes (sub-plan 02-B5): fixtures/simulator/ (the PI
-// set's events as Multi-Part Event packages, each contract's interface and state) and
+// The fixtures the token indexer consumes (sub-plan 02-B5; the DU set added in 03-A4a):
+// fixtures/simulator/ (the PI and DU sets' events as Multi-Part Event packages, each contract's
+// interface and state) and
 // fixtures/bundles/ (verification cases). They are exactly what scripts/export-fixtures.ts
 // writes, and each bundle case is what cases.json says it is — checked with the patched
 // reference public-interface-verify, including over HTTP (a loopback server started here)
@@ -29,6 +30,8 @@ type Result = { level: number; checks: { level1: { ok: boolean; reason?: string;
 type Verify = { verify(o: Record<string, unknown>): Promise<Result> };
 type Hash = { readIndexFile(dir: string): { hash: string; compiler: { version: string }; files: { path: string }[] }; indexCommitment(i: unknown): Buffer; parsePayload(p: Uint8Array): { commitment: Buffer; url: string; parts: number } };
 
+const PI_ROWS = ['LSUNPI', 'SSTARPI', 'CNSTPI', 'UPROMPI'];
+const DU_ROWS = ['SNEBDU', 'LMOONDU', 'UMETDU', 'DAURDU'];
 const cases = (JSON.parse(readFileSync(join(FIX, 'bundles', 'cases.json'), 'utf8')) as { cases: Case[] }).cases;
 const caseOf = (name: string): Case => {
   const c = cases.find((x) => x.case === name);
@@ -89,11 +92,11 @@ describe('fixtures/simulator', () => {
     }
   });
 
-  it('only the two opted-in names; MIP-0018 declares only `repository`; one pointer per contract, UPROMPI\'s in 2 parts', () => {
+  it('only the two opted-in names; a PI contract declares only `repository`; one pointer per contract, UPROMPI\'s in 2 parts', () => {
     expect([...new Set(corpus.events.map((e) => e.eventName))].sort()).toEqual(['mip-0018:token-metadata[v1]', 'mip-xxxx:public-interface[v1]']);
-    for (const p of corpus.packages.filter((x) => x.eventName === 'mip-0018:token-metadata[v1]')) expect(p.metadata?.key).toBe('repository');
+    for (const p of corpus.packages.filter((x) => x.eventName === 'mip-0018:token-metadata[v1]' && PI_ROWS.includes(x.row))) expect(p.metadata?.key).toBe('repository');
     const pointers = corpus.packages.filter((x) => x.eventName === 'mip-xxxx:public-interface[v1]');
-    expect(pointers.map((p) => [p.row, p.parts])).toEqual([['LSUNPI', 1], ['SSTARPI', 1], ['CNSTPI', 1], ['UPROMPI', 2]]);
+    expect(pointers.map((p) => [p.row, p.parts])).toEqual([['LSUNPI', 1], ['SSTARPI', 1], ['CNSTPI', 1], ['UPROMPI', 2], ['SNEBDU', 1], ['LMOONDU', 1], ['UMETDU', 1], ['DAURDU', 1]]);
     for (const p of pointers) {
       const i = interfaces.find((x) => x.row === p.row);
       expect(p.payloadHex).toBe(i?.bundle.payloadHex);
@@ -102,7 +105,26 @@ describe('fixtures/simulator', () => {
     }
   });
 
-  it.each(['LSUNPI', 'SSTARPI', 'CNSTPI', 'UPROMPI'])('%s: its committed bundle passes Levels 1-2 against the state in interfaces.json', async (row) => {
+  it.each(DU_ROWS)('%s (DU): its MIP-0018 packages are exactly its plan\'s declarations, in order — the MIP-18 twin\'s metadata, long values as ONE multi-part package', (row) => {
+    const plan = (JSON.parse(readFileSync(join(ROOT, 'deployments', 'dual-matrix.json'), 'utf8')) as { rows: { id: string; steps: { kind: string; declaration?: { key: string; parts: number; payloadHex: string } }[] }[] }).rows.find((r) => r.id === row)!;
+    const declarations = plan.steps.flatMap((s) => (s.kind === 'emit' ? [s.declaration!] : []));
+    const packages = corpus.packages.filter((p) => p.row === row && p.eventName === 'mip-0018:token-metadata[v1]');
+    expect(packages.map((p) => [p.metadata?.key, p.parts, p.payloadHex])).toEqual(declarations.map((d) => [d.key, d.parts, d.payloadHex]));
+  });
+
+  it('the DU corpus holds the long values and the Null: SNEBDU `metadata` 3 parts (one JSON value), LMOONDU a Null then `description` in 2 parts; integers decoded', () => {
+    const md = (row: string, key: string) => corpus.packages.filter((p) => p.row === row && p.metadata?.key === key) as { parts: number; metadata?: { valType?: number; value?: string; integer?: string; null?: boolean } }[];
+    const [metadata] = md('SNEBDU', 'metadata');
+    expect([metadata?.parts, metadata?.metadata?.valType]).toEqual([3, 3]);
+    expect(() => JSON.parse(metadata?.metadata?.value ?? '')).not.toThrow();
+    expect(md('LMOONDU', 'description').map((p) => [p.parts, p.metadata?.valType, p.metadata?.null ?? false])).toEqual([[1, 1, false], [1, 5, true], [2, 1, false]]);
+    expect(md('LMOONDU', 'decimals')[0]?.metadata?.integer).toBe('8');
+    expect(md('DAURDU', 'repository')).toHaveLength(2);
+    const counts = (corpus as unknown as { packagesByParts: Record<string, number> }).packagesByParts;
+    expect([counts['2'], counts['3']]).toEqual([2, 1]);
+  });
+
+  it.each([...PI_ROWS, ...DU_ROWS])('%s: its committed bundle passes Levels 1-2 against the state in interfaces.json', async (row) => {
     const i = interfaces.find((x) => x.row === row);
     const record = (JSON.parse(readFileSync(join(ROOT, 'deployments', 'bundles.json'), 'utf8')) as { bundles: { id: string; path: string }[] }).bundles.find((b) => b.id === row);
     const r = await verifier.verify({

@@ -132,7 +132,17 @@ transaction whose ONE guaranteed intent holds UMETDU's `publishRepository` decla
 `mip-xxxx:public-interface[v1]` package): equal transaction, address and segment, distinct names —
 a reader that groups by name reads two packages, each for its own protocol.
 `test/p4-dual-intent.test.ts` applies it to an in-process ledger and reads it back with the
-Multi-Part Event reader.
+Multi-Part Event reader; `scripts/publish-dual-intent.ts` publishes it on a chain.
+
+**P2 — a second valid bundle.** `bundles/LMOONDU-v2/` is LMOONDU's interface again (same source,
+same keys) at another location with one more listed file, `PUBLICATION.md` — so another
+commitment — for publishing two valid publications of one contract in the same block.
+
+**On chain** (a local Midnight 2.x chain): `scripts/deploy-and-publish.ts SNEBDU LMOONDU UMETDU
+DAURDU` deploys and runs the DU plans (LMOONDU and DAURDU in stages: 12 keys with the deploy, 4
+`VerifierKeyInsert`s — `test/du-deploy-plan.test.ts` measures every deploy offline), then
+`scripts/publish-dual-intent.ts` (P4) and `scripts/stranger-check.ts` (every emitting circuit
+refused without the secret).
 
 ## Toolchain
 

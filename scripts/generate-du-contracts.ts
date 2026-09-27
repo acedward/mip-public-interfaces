@@ -140,6 +140,8 @@ interface DuRow {
   interface: 'HIDDEN';
   covers: string;
   bundlePath: string;
+  /** A second valid bundle of the same interface at another location (LMOONDU: the P2 pair). */
+  secondBundle?: { path: string; purpose: string };
 }
 
 interface DualSet {
@@ -827,6 +829,15 @@ const GENERATORS: Record<Template, (v: Variant, planned: PlannedStep[]) => strin
 
 export const variants = (): Variant[] => dualSet.rows.map(variantOf);
 
+/** The second bundle location of a row (P2): URL, size, parts; never inside the first bundle's directory. */
+const secondBundleOf = (v: Variant) => {
+  const second = v.du.secondBundle!;
+  if (second.path.startsWith(v.du.bundlePath) || v.du.bundlePath.startsWith(second.path)) throw new Error(`${v.id}: a second bundle must not nest with the first`);
+  const url = `${dualSet.bundleBase}${second.path}index.json`;
+  const urlBytes = Buffer.byteLength(url, 'utf8');
+  return { id: `${v.id}-v2`, url, urlBytes, parts: Math.max(1, Math.ceil((32 + urlBytes) / PART_SIZE)), path: second.path, purpose: second.purpose };
+};
+
 function main(): void {
   const argv = process.argv.slice(2);
   let outRoot = ROOT;
@@ -880,6 +891,7 @@ function main(): void {
       constructorArgs: { name_: v.name, symbol_: v.symbol },
       repository: v.repositoryUrl,
       bundle: { url: v.bundleUrl, urlBytes: Buffer.byteLength(v.bundleUrl, 'utf8'), parts: v.bundleParts, path: v.du.bundlePath },
+      ...(v.du.secondBundle ? { secondBundle: secondBundleOf(v) } : {}),
       steps: planned,
     });
   }

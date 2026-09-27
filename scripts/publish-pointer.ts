@@ -31,7 +31,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { chainLedgerParameters } from './staged-deploy.js';
 import { compiledContractOf, contractModuleOf, errorText, log, openWallet, providersOf, publishPointer, syncedBalances } from './chain.js';
-import { deployOrFind, openRecord, readMatrix, type ContractProviders, type RowRecord } from './deploy-lib.js';
+import { deployOrFind, openRecord, readAllRows, type ContractProviders, type RowRecord } from './deploy-lib.js';
 import {
   accountIdOf,
   bytesOfHex,
@@ -69,7 +69,7 @@ for (const p of plan.pointers) {
 async function main(): Promise<void> {
   const profile = networkProfile();
   const { deployment, save } = openRecord(OUT_FILE, profile);
-  const matrix = readMatrix();
+  const allRows = readAllRows();
   const seed = await walletSeed();
   const secret = emitterSecret();
   const fungibleSk = fungibleSecret();
@@ -87,18 +87,18 @@ async function main(): Promise<void> {
       try {
         let record: RowRecord | undefined = deployment.rows[request.key];
         if (request.deploy) {
-          const row = matrix.rows.find((r) => r.id === request.deploy);
+          const row = allRows.find((r) => r.id === request.deploy);
           if (!row) throw new Error(`${request.key}: unknown matrix row ${request.deploy}`);
           if (record && record.row !== row.id) throw new Error(`${request.key} is already an instance of ${record.row}`);
           record ??= { id: request.key, row: row.id, contract: row.contract, instance: true, steps: [], publications: [] };
           deployment.rows[request.key] = record;
           if (record.emitterSecretHash && record.emitterSecretHash !== hexOf(secretHash)) throw new Error(`${request.key} was deployed with another emitter secret`);
           record.emitterSecretHash = hexOf(secretHash);
-          if (row.id === 'LSUNPI') record.fungibleAccount = hexOf(accountIdOf(fungibleSk));
+          if (row.template === 'FungibleToken') record.fungibleAccount = hexOf(accountIdOf(fungibleSk));
         }
         if (!record) throw new Error(`${request.key} is not in ${OUT_FILE}; give "deploy": <ROW> to deploy an instance`);
         record.publications ??= [];
-        const row = matrix.rows.find((r) => r.id === record!.row);
+        const row = allRows.find((r) => r.id === record!.row);
         if (!row) throw new Error(`${request.key}: its row ${record.row} is not in the matrix`);
         const parts = request.partsHex ? request.partsHex.map(bytesOfHex) : pointerParts(request.commitment!, request.url!);
         const payloadSha256 = sha256Hex(Buffer.concat(parts.map((p) => Buffer.from(p))));

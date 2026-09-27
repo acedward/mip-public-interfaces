@@ -55,6 +55,8 @@ interface MatrixRow {
   interface?: 'FULL' | 'HIDDEN';
   interfaceSource?: string;
   bundle: { url: string; urlBytes: number; parts: number; path: string };
+  /** A second valid bundle of the same interface (the DU set's LMOONDU: the P2 pair). */
+  secondBundle?: { id: string; url: string; urlBytes: number; parts: number; path: string; purpose: string };
 }
 
 interface DeployCheckResult {
@@ -221,8 +223,26 @@ function hiddenLicenceFiles(id: string, sources: string[], srcRoot: string, temp
   return { LICENSE: readFileSync(path.join(ROOT, 'LICENSE'), 'utf8'), NOTICE: notice, 'SOURCE.md': source };
 }
 
+/**
+ * The one file that makes a second bundle's content differ from the first (P2): what it is and
+ * why it exists. Listed in its index.json like every file, so the commitment differs.
+ */
+function publicationNote(id: string, second: NonNullable<MatrixRow['secondBundle']>): string {
+  return [
+    `# ${id}: a second publication of the same interface`,
+    '',
+    `This bundle (\`${second.url}\`) carries the same interface source and the same verifier keys as ${id}'s first bundle, so it verifies at Levels 1-3 against the same deployed contract; this file and its location make its content — and so its commitment — differ.`,
+    '',
+    second.purpose,
+    '',
+  ].join('\n');
+}
+
 export interface BundleRecord {
+  /** The contract id, or `<contract>-v2` for a second bundle of a contract (then `contract` names it). */
   id: string;
+  /** Only on a second bundle: the contract whose interface it is. */
+  contract?: string;
   /** FULL (the PI set: the contract file is the interface) or HIDDEN (the DU set: the private form). */
   form: 'FULL' | 'HIDDEN';
   url: string;
@@ -249,13 +269,18 @@ export async function buildBundles(outRoot: string, ids: string[] = []): Promise
     ...(JSON.parse(readFileSync(MATRIX, 'utf8')) as { rows: MatrixRow[] }).rows,
     ...(JSON.parse(readFileSync(DUAL_MATRIX, 'utf8')) as { rows: MatrixRow[] }).rows,
   ];
-  const rows = all.filter((r) => ids.length === 0 || ids.includes(r.id));
-  if (ids.length > 0 && rows.length !== ids.length) throw new Error(`unknown id(s) among ${ids.join(', ')}`);
+  // Every bundle: one per row, then a row's second bundle (P2) as an entry of its own.
+  const entries = all.flatMap((r) => [
+    { row: r, id: r.id, bundle: r.bundle, second: undefined as MatrixRow['secondBundle'] },
+    ...(r.secondBundle ? [{ row: r, id: r.secondBundle.id, bundle: r.secondBundle, second: r.secondBundle }] : []),
+  ]);
+  const chosen = entries.filter((e) => ids.length === 0 || ids.includes(e.id));
+  if (ids.length > 0 && chosen.length !== ids.length) throw new Error(`unknown id(s) among ${ids.join(', ')}`);
   const records: BundleRecord[] = [];
-  for (const row of rows) {
+  for (const { row, id, bundle, second } of chosen) {
     const fullOut = path.join(ROOT, 'contracts', 'managed', row.id);
     if (!existsSync(path.join(fullOut, 'keys'))) throw new Error(`${row.id} is not compiled with keys: ./scripts/compile.sh generated/${row.id}`);
-    const outDir = path.join(outRoot, ...row.bundle.path.split('/').filter(Boolean));
+    const outDir = path.join(outRoot, ...bundle.path.split('/').filter(Boolean));
     mkdirSync(path.dirname(outDir), { recursive: true });
     const hidden = row.interface === 'HIDDEN';
     // FULL: the interface IS the contract (its build compared with itself). HIDDEN: the private
@@ -269,16 +294,20 @@ export async function buildBundles(outRoot: string, ids: string[] = []): Promise
       interfaceOut,
       fullOut,
       outDir,
-      url: row.bundle.url,
+      url: bundle.url,
       ...(hidden ? {} : { interfaceKind: 'full' as const }),
-      extraFiles: licenceFiles(row.id, sources, commonRoot(sources), hidden ? { template: row.template as Template } : undefined),
+      extraFiles: {
+        ...licenceFiles(row.id, sources, commonRoot(sources), hidden ? { template: row.template as Template } : undefined),
+        ...(second ? { 'PUBLICATION.md': publicationNote(row.id, second) } : {}),
+      },
     });
     const bad = r.rows.filter((x) => x.status !== 'IDENTICAL');
-    if (bad.length) throw new Error(`${row.id}: deploy-check rows ${JSON.stringify(bad)}`);
-    if (r.url !== row.bundle.url) throw new Error(`${row.id}: url ${r.url} is not the planned ${row.bundle.url}`);
-    if (r.parts.length !== row.bundle.parts) throw new Error(`${row.id}: ${r.parts.length} parts, the plan says ${row.bundle.parts}`);
+    if (bad.length) throw new Error(`${id}: deploy-check rows ${JSON.stringify(bad)}`);
+    if (r.url !== bundle.url) throw new Error(`${id}: url ${r.url} is not the planned ${bundle.url}`);
+    if (r.parts.length !== bundle.parts) throw new Error(`${id}: ${r.parts.length} parts, the plan says ${bundle.parts}`);
     records.push({
-      id: row.id,
+      id,
+      ...(second ? { contract: row.id } : {}),
       form: hidden ? 'HIDDEN' : 'FULL',
       url: r.url,
       urlBytes: Buffer.byteLength(r.url, 'utf8'),
@@ -286,7 +315,7 @@ export async function buildBundles(outRoot: string, ids: string[] = []): Promise
       commitment: r.commitment.toString('hex'),
       payloadHex: r.payload.toString('hex'),
       partsHex: r.parts.map((p) => p.toString('hex')),
-      path: row.bundle.path,
+      path: bundle.path,
       interface: r.interfaceRel,
       files: r.files.length,
       bytes: r.bytes,
@@ -297,7 +326,7 @@ export async function buildBundles(outRoot: string, ids: string[] = []): Promise
       compiler: [`compactc ${r.compact.compiler}`, ...(r.compact.flags ?? [])].join(' '),
     });
     console.log(
-      `${row.id.padEnd(8)} ${String(r.files.length).padStart(2)} files ${String(r.bytes).padStart(7)} B; ${r.circuits.length} circuits (verify-only: ${r.verifyOnly.join(', ') || '—'}); url ${Buffer.byteLength(r.url)} B, ${r.parts.length} part(s); commitment ${r.commitment.toString('hex')}`,
+      `${id.padEnd(8)} ${String(r.files.length).padStart(2)} files ${String(r.bytes).padStart(7)} B; ${r.circuits.length} circuits (verify-only: ${r.verifyOnly.join(', ') || '—'}); url ${Buffer.byteLength(r.url)} B, ${r.parts.length} part(s); commitment ${r.commitment.toString('hex')}`,
     );
   }
   return records;

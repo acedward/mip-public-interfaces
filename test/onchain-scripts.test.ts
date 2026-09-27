@@ -18,7 +18,7 @@ import {
   pointerParts,
   witnessesFor,
 } from '../scripts/profile.js';
-import { provableCircuits, readBundles, readMatrix } from '../scripts/deploy-lib.js';
+import { provableCircuits, readAllRows, readBundles, readDualMatrix, readMatrix, stepArgs } from '../scripts/deploy-lib.js';
 import * as sim from '../scripts/simulate-pi.js';
 
 const ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..');
@@ -57,7 +57,7 @@ describe('secrets and recipients match the Compact contracts (simulator)', () =>
 });
 
 describe('the witness table answers exactly what each compiled contract declares', () => {
-  it.each(readMatrix().rows.map((r) => [r.id, r.contract] as const))('%s', (_id, contract) => {
+  it.each(readAllRows().map((r) => [r.id, r.contract] as const))('%s', (_id, contract) => {
     const info = JSON.parse(readFileSync(join(ROOT, 'contracts', 'managed', contract, 'compiler', 'contract-info.json'), 'utf8')) as {
       witnesses: { name: string }[];
     };
@@ -72,6 +72,49 @@ describe('the witness table answers exactly what each compiled contract declares
       expect(circuits.length).toBeGreaterThanOrEqual(8);
       expect(circuits.length).toBeLessThanOrEqual(11);
     }
+  });
+});
+
+describe('the DU set on chain (sub-plan 03-A4a): keys and step arguments', () => {
+  it('every DU contract has a publishBundle key and 12-16 provable circuits; its pure getter has none', () => {
+    for (const row of readDualMatrix().rows) {
+      const circuits = provableCircuits(row.contract);
+      expect(circuits).toContain('publishBundle');
+      expect(circuits.length).toBeGreaterThanOrEqual(12);
+      expect(circuits.length).toBeLessThanOrEqual(16);
+      expect(circuits).not.toContain(row.id === 'DAURDU' ? 'kinds' : 'kind');
+      for (const step of row.steps) expect(circuits, `${row.id} ${step.circuit}`).toContain(step.circuit);
+    }
+  });
+
+  it('every mint and transfer step gets the simulator corpus\'s arguments on chain — except a shielded mint\'s recipient, which is the deployer', () => {
+    const zswapRecipient = { bytes: new Uint8Array(32).fill(0x77) };
+    let checked = 0;
+    for (const row of readAllRows()) {
+      for (const [index, step] of row.steps.entries()) {
+        if (step.kind !== 'mint' && step.kind !== 'transfer') continue;
+        const onChain = stepArgs(row, step, index, { fungibleSk: sim.TEST_OWNER_SK, zswapRecipient });
+        const simulated = sim.argsFor(row as never, step as never, undefined, 0);
+        if (step.kind === 'mint' && step.token === 'shielded') {
+          expect(onChain.recipient).toBe('deployer');
+          expect(onChain.args.slice(step.circuit === 'mintPiece' ? 2 : 1)).toEqual(simulated.slice(step.circuit === 'mintPiece' ? 2 : 1));
+          expect(onChain.args).toContainEqual(zswapRecipient);
+        } else {
+          expect(onChain.args, `${row.id} ${index} ${step.circuit}`).toEqual(simulated);
+        }
+        checked += 1;
+      }
+    }
+    // PI: 1 ledger mint + 1 transfer (LSUNPI), 1 shielded (SSTARPI), 5 pieces (CNSTPI);
+    // DU: 2 shielded (SNEBDU), 1 ledger (LMOONDU), 3 unshielded (UMETDU), 1 + 1 (DAURDU)
+    expect(checked).toBe(8 + 8);
+  });
+
+  it('an unshielded mint pays a user address: Either<ContractAddress, UserAddress> with the label\'s holderBytes', () => {
+    const umet = readDualMatrix().rows.find((r) => r.id === 'UMETDU')!;
+    const { args, recipient } = stepArgs(umet, umet.steps[0]!, 0, { fungibleSk: sim.TEST_OWNER_SK, zswapRecipient: { bytes: new Uint8Array(32) } });
+    expect(args).toEqual([{ is_left: false, left: { bytes: new Uint8Array(32) }, right: { bytes: holderBytes('user:umet-0') } }, 100n]);
+    expect(recipient).toBe(hexOf(holderBytes('user:umet-0')));
   });
 });
 

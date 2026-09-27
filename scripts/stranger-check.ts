@@ -1,12 +1,14 @@
 /**
  * A caller without the emitter secret cannot emit (spec 00024 Q12, FR-019b) — checked on the
- * chain the deployment record names, for the PI set.
+ * chain the deployment record names, for the PI set and the DU set (every MIP-0018 declaration
+ * circuit of a DU contract — a long value's ONE call included — and its `publishBundle`).
  *
  *   MN_* as for deploy-and-publish.ts (no secret files needed), then
  *     node --import tsx scripts/stranger-check.ts [LSUNPI …]
  *
- * For every EMITTING circuit of every deployed matrix row — its `publish*Repository`
- * declarations and `publishBundle` (with the row's recorded first pointer part) — the contract
+ * For every EMITTING circuit of every deployed matrix row — its declaration circuits (a PI
+ * row's `publish*Repository`, a DU row's twin declarations incl. the Null `clear…`) and
+ * `publishBundle` (with the row's recorded first pointer part) — the contract
  * is found again with a fresh random 32-byte emitter secret (and a fresh FungibleToken secret)
  * as its private state, the "stranger", and the circuit is called through midnight-js. Each
  * call must fail with `TokenMetadata: caller is not the emitter` while executing, before any
@@ -20,7 +22,7 @@ import { randomBytes } from 'node:crypto';
 import path from 'node:path';
 import { findDeployedContract } from '@midnight-ntwrk/midnight-js-contracts';
 import { compiledContractOf, contractModuleOf, errorText, log, openWallet, providersOf, publishPointer, syncedBalances } from './chain.js';
-import { openRecord, readBundles, readMatrix, type CallableContract } from './deploy-lib.js';
+import { openRecord, readAllRows, readBundles, type CallableContract } from './deploy-lib.js';
 import { bytesOfHex, enterPrivateStateDirectory, networkProfile, REPOSITORY_ROOT, walletSeed } from './profile.js';
 
 const OUT_FILE = path.resolve(process.env.MN_DEPLOYMENT_FILE?.trim() || path.join(REPOSITORY_ROOT, 'out', 'deployment.json'));
@@ -29,10 +31,10 @@ const REFUSED = /TokenMetadata: caller is not the emitter/;
 async function main(): Promise<void> {
   const profile = networkProfile();
   const { deployment } = openRecord(OUT_FILE, profile);
-  const matrix = readMatrix();
+  const allRows = readAllRows();
   const bundles = readBundles();
   const requested = process.argv.slice(2).map((s) => s.toUpperCase());
-  const rows = matrix.rows.filter((row) => deployment.rows[row.id]?.address && (requested.length === 0 || requested.includes(row.id)));
+  const rows = allRows.filter((row) => deployment.rows[row.id]?.address && (requested.length === 0 || requested.includes(row.id)));
   if (rows.length === 0) throw new Error(`no deployed row to check in ${OUT_FILE}`);
 
   const latestAction = async (address: string): Promise<string | null> => {

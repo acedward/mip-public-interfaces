@@ -35,17 +35,29 @@ The over-size-cap case is built to exceed a **1048576-byte** bundle cap (`limits
 | `deployments/reference-set.json` | `6b37b56af510d3483899e04690762b12dc0a059853ed07fdd4036e5c2bf6a40b` |
 | `deployments/public-interface-set.json` | `cf727696b4465408e1ba3a8e4f3727729c65e61aa04731fa282d09d3a5acfe28` |
 | `deployments/generated-matrix.json` | `9b813052eb95aaf49df850c2c10554504c7a2e2d22a6567802609513a92a5e9c` |
-| `deployments/bundles.json` | `e5e682e993605d702f9512e67056e8215779e4ce5ca02e5aee8eac194d0b867f` |
+| `deployments/dual-set.json` | `acd6362d3cbb86786b4cde9cc580473b4c03636279b765b4e505b420d7f85acc` |
+| `deployments/dual-matrix.json` | `27b1996855b8f1a6c2d719833d2d2f483e455a3753afd444173f902ad47965af` |
+| `deployments/bundles.json` | `4b43e2e8f3701df4c1ddd78c56980315c212006942c80694799196df1e4d9744` |
 | `scripts/generate-pi-contracts.ts` | `5b4e94e33fbadf8b3d2b1702ee8e93402aeb1450fb9a48c6ff4eb2683cf3e8cc` |
-| `scripts/bundle.ts` | `9823dff8ec074dad874ba322d1b54e2f66b4d5595b91aaea4ce488c148d4aa84` |
+| `scripts/generate-du-contracts.ts` | `287ea9a15c7af8fc73587deb3c637e060bd86e0b2acd46f4c3f70263be388a4a` |
+| `scripts/du-interfaces.ts` | `4eea366f02dfedac4a66a315df8c4f8e7c99575fc8e6e3d8371cb82fcc2bd628` |
+| `scripts/bundle.ts` | `3dc1a5268b4f03cda7fc72f6c62064090bb792a1125e9bddb508752929fab56b` |
 | `scripts/simulate-pi.ts` | `014611f0c687c01cbe132c539bbda2f916e100708ce682a5b6275ea970d24c2d` |
-| `scripts/export-fixtures.ts` | `38a6168d142dd18c4be48381efebb378dc643ad4f86d91b0a01122db8825704a` |
+| `scripts/export-fixtures.ts` | `f3fdded26bcd7ea57e74391c6a3edc9fbb51bfa54ac7119018e4082820d5a414` |
 | `contracts/TokenMetadata.compact` | `7d16b4da4209f48815da07950513bbd58b2f14d795db8fe54f7fd2d5b7fb5847` |
 | `contracts/OffChainInterface.compact` | `c9aaba4de48b17ac3c532e296a223da95836e5ad0d3f0e83f5d15f35cfc94f88` |
 | `contracts/generated/LSUNPI.compact` | `17a7c49a4e7c140c32577950b36cd071603a6c1ef6b851d350034f10e7267e3b` |
 | `contracts/generated/SSTARPI.compact` | `d9a21a0f0d242be95c53fb4c9d5dc0bd62e7dbec33553ecd672c211a7870ff2b` |
 | `contracts/generated/CNSTPI.compact` | `0a5ccfc1232eee712928193fb68e5d2266a05979bceb6f927105eb352041ae50` |
 | `contracts/generated/UPROMPI.compact` | `682f568c64dc66aeb5104f343daa6ba1b8d8f0aeb20f132df9c996463048f670` |
+| `contracts/generated/SNEBDU.compact` | `e4ddd267aec6f5a094757b1832239e8c25fea880e14fac63372558342bc51bf8` |
+| `contracts/generated/LMOONDU.compact` | `58618d98d7ab9c45e0b4ee3774f0e09591faa3b1977ea620688f9878d620a756` |
+| `contracts/generated/UMETDU.compact` | `ab28173011c2b875ba339767eb8cb1b55bbe823da7f6f247592e5611952793c4` |
+| `contracts/generated/DAURDU.compact` | `57691e5a067854d9506f418c0cb173b848f0aac0f8c33a5251c403e587068e77` |
+| `contracts/interfaces/SNEBDU.Interface.compact` | `de3c97e5ac8c8e3cb6f10cf647c4e5325414606a9604d583cee39d1dd8887a0e` |
+| `contracts/interfaces/LMOONDU.Interface.compact` | `92dd20b9dfd30a98e4fc89f904a0887ebe8b8b221fe3f997235837c00430410b` |
+| `contracts/interfaces/UMETDU.Interface.compact` | `8a66666a3d6fcf26bf2cfe3b2de47a6fdb99e0be5dadbaf2820df77be9fa8912` |
+| `contracts/interfaces/DAURDU.Interface.compact` | `03d180b924afba754c0b8e018c8a837a8abdb92e62b7d39aa010000b88f9a342` |
 
 Compiled artefacts (every committed file of `contracts/managed/<ID>/`, as one digest):
 
@@ -55,6 +67,14 @@ Compiled artefacts (every committed file of `contracts/managed/<ID>/`, as one di
 | `contracts/managed/SSTARPI/` | `73527cc8174d2cfe9f3e19c6f3193ec14101aec04df47f3131cba77c00c79598` |
 | `contracts/managed/CNSTPI/` | `69706c4cde74be551a83cde51406abe8c4a6c9ba4fe9e17e2df2dfb68dddf1fe` |
 | `contracts/managed/UPROMPI/` | `bab10f38c7f7d1c2202bc919f465a8e46951c4bc9a1ed886545aa9d30d6feb2c` |
+| `contracts/managed/SNEBDU/` | `98836ecac8adf6b8ea38a7267bce8672d4d7464bb957b7b870d84552cdadcfbf` |
+| `contracts/managed/LMOONDU/` | `ef8e0756a5139263d26d8b3fd32e6d96122d009f2ed20e246ef44e83923d2eef` |
+| `contracts/managed/UMETDU/` | `335c622ffea186c82855c6b8d021bd6ea5751a5dde5d44f3f548d7cb32fd9c0a` |
+| `contracts/managed/DAURDU/` | `5dbbb2bd3fad913a5e5bde65c880e6bce10230d950435beaea112a0b20bc57ec` |
+| `contracts/managed/SNEBDU.Interface/` | `2570fc660146470547d89240ea1ece95fb3e9c9ec3219721cdbab1137ace7707` |
+| `contracts/managed/LMOONDU.Interface/` | `d548f601dbe0c119b5fb45e272e020e21a49d16b1e2aceff09ad7e947e568374` |
+| `contracts/managed/UMETDU.Interface/` | `5c0a789e5dbc7cf78a505a5cfdb8ce77a4e6652429b4ea1ab8322892f753302a` |
+| `contracts/managed/DAURDU.Interface/` | `b0f92cbf265010c0ec164e00fdffa97ae9ef3c2d63a380972f50f4fdc69db1f8` |
 
 ## Outputs (SHA-256)
 

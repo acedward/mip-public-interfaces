@@ -194,6 +194,14 @@
         "parts": 1,
         "path": "LMOONDU/"
       },
+      "secondBundle": {
+        "id": "LMOONDU-v2",
+        "url": "http://bundles/LMOONDU-v2/index.json",
+        "urlBytes": 36,
+        "parts": 1,
+        "path": "LMOONDU-v2/",
+        "purpose": "P2 (spec 00024 §9.2): a second VALID publication of LMOONDU's interface with other content — the same interface source and keys, a new location and one more listed file (PUBLICATION.md), so a different commitment. Project 00024-03-C publishes it and the first one in the same block; the indexer must make the later one (by transaction position) current."
+      },
       "steps": [
         {
           "kind": "emit",

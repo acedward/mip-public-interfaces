@@ -142,14 +142,14 @@ describe('the DU bundles (bundles/<ID>/, deployments/bundles.json)', () => {
   let rebuiltRecords: BundleRecord[];
   beforeAll(async () => {
     rebuilt = mkdtempSync(join(tmpdir(), 'du-bundles-'));
-    rebuiltRecords = await buildBundles(rebuilt, IDS);
+    rebuiltRecords = await buildBundles(rebuilt, [...IDS, 'LMOONDU-v2']);
   });
   afterAll(() => rmSync(rebuilt, { recursive: true, force: true }));
 
-  it('four HIDDEN bundles, one per DU contract, after the four FULL PI bundles', () => {
-    expect(record.bundles.map((b) => [b.id, b.form])).toEqual([
-      ['LSUNPI', 'FULL'], ['SSTARPI', 'FULL'], ['CNSTPI', 'FULL'], ['UPROMPI', 'FULL'],
-      ...IDS.map((id) => [id, 'HIDDEN']),
+  it('four HIDDEN bundles, one per DU contract, after the four FULL PI bundles — LMOONDU\'s second bundle (P2) right after its first', () => {
+    expect(record.bundles.map((b) => [b.id, b.form, b.contract ?? b.id])).toEqual([
+      ['LSUNPI', 'FULL', 'LSUNPI'], ['SSTARPI', 'FULL', 'SSTARPI'], ['CNSTPI', 'FULL', 'CNSTPI'], ['UPROMPI', 'FULL', 'UPROMPI'],
+      ['SNEBDU', 'HIDDEN', 'SNEBDU'], ['LMOONDU', 'HIDDEN', 'LMOONDU'], ['LMOONDU-v2', 'HIDDEN', 'LMOONDU'], ['UMETDU', 'HIDDEN', 'UMETDU'], ['DAURDU', 'HIDDEN', 'DAURDU'],
     ]);
   });
 
@@ -230,6 +230,56 @@ describe('the DU bundles (bundles/<ID>/, deployments/bundles.json)', () => {
       expect(source, f).toContain(sha256(readFileSync(join(ROOT, 'contracts', f))));
     }
     expect(TEMPLATE[id]).toBeDefined();
+  });
+});
+
+describe('LMOONDU-v2: a second VALID bundle of LMOONDU with other content (sub-plan 03-A4a, for 03-C\'s same-block P2 pair)', () => {
+  let rebuilt: string;
+  beforeAll(async () => {
+    rebuilt = mkdtempSync(join(tmpdir(), 'du-v2-'));
+    await buildBundles(rebuilt, ['LMOONDU-v2']);
+  });
+  afterAll(() => rmSync(rebuilt, { recursive: true, force: true }));
+
+  it('committed = a fresh deploy-check; a sibling location (never inside the first bundle), 1 part, its own commitment', () => {
+    const v2 = byId('LMOONDU-v2');
+    const v1 = byId('LMOONDU');
+    const committed = dirOf(join(ROOT, 'bundles'), v2);
+    const fresh = dirOf(rebuilt, v2);
+    expect(tree(committed)).toEqual(tree(fresh));
+    for (const f of tree(committed)) expect(readFileSync(join(committed, f)).equals(readFileSync(join(fresh, f))), f).toBe(true);
+    expect([v2.url, v2.parts, v2.path]).toEqual(['http://bundles/LMOONDU-v2/index.json', 1, 'LMOONDU-v2/']);
+    expect(tree(dirOf(join(ROOT, 'bundles'), v1)).some((f) => f.startsWith('v2/') || f.includes('LMOONDU-v2'))).toBe(false);
+    expect(v2.commitment).not.toBe(v1.commitment);
+    expect(hash.readIndexFile(committed).hash).toBe(v2.commitment);
+  });
+
+  it('the same interface source, keys, wrapper and circuits as the first; its content differs by PUBLICATION.md and its README (its URL)', () => {
+    const d1 = dirOf(join(ROOT, 'bundles'), byId('LMOONDU'));
+    const d2 = dirOf(join(ROOT, 'bundles'), byId('LMOONDU-v2'));
+    expect(tree(d2)).toEqual([...tree(d1), 'PUBLICATION.md'].sort());
+    for (const f of tree(d1).filter((f) => f.startsWith('src/') || f.startsWith('out/') || f === 'LICENSE' || f === 'NOTICE' || f === 'SOURCE.md' || f === 'package.json')) {
+      expect(readFileSync(join(d2, f)).equals(readFileSync(join(d1, f))), f).toBe(true);
+    }
+    expect(readFileSync(join(d2, 'README.md'), 'utf8')).toContain('http://bundles/LMOONDU-v2/index.json');
+    expect(readFileSync(join(d2, 'PUBLICATION.md'), 'utf8')).toMatch(/P2/);
+    expect(byId('LMOONDU-v2').circuits).toEqual(byId('LMOONDU').circuits);
+  });
+
+  it('valid: Levels 1-2 against LMOONDU\'s simulated state, with its own pointer as the event', async () => {
+    const v2 = byId('LMOONDU-v2');
+    const sim = await simulatePi('LMOONDU');
+    const r = await verifier.verify({ bundleDir: dirOf(join(ROOT, 'bundles'), v2), eventPayload: Buffer.from(v2.payloadHex, 'hex'), stateBytes: sim.state, level: 2 });
+    expect(r.checks.level1.ok, r.checks.level1.reason).toBe(true);
+    expect(r.checks.level2?.ok).toBe(true);
+    expect(r.level).toBe(2);
+  });
+
+  it('negative control: the first bundle\'s pointer does not verify the second bundle (commitment mismatch at Level 1)', async () => {
+    const v2 = byId('LMOONDU-v2');
+    const sim = await simulatePi('LMOONDU');
+    const r = await verifier.verify({ bundleDir: dirOf(join(ROOT, 'bundles'), v2), eventPayload: Buffer.from(byId('LMOONDU').payloadHex, 'hex'), stateBytes: sim.state, level: 2 });
+    expect(r.checks.level1.ok).toBe(false);
   });
 });
 
