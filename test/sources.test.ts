@@ -109,10 +109,30 @@ describe('the vendored OpenZeppelin Compact modules (contracts/vendor/openzeppel
   );
 });
 
-describe('the reference set (deployments/reference-set.json, a pinned copy — deployments/README.md)', () => {
+describe('the reference set (deployments/reference-set.json, a pinned copy — deployments/SOURCE.md)', () => {
   it('is byte-identical to acedward/mip-0018-midnight-contracts @ cb6c675 deployments/reference-set.json', () => {
     expect(sha256(readFileSync(join(ROOT, 'deployments', 'reference-set.json')))).toBe(
       '6b37b56af510d3483899e04690762b12dc0a059853ed07fdd4036e5c2bf6a40b',
     );
   });
+
+  it('deployments/SOURCE.md records that pin (upstream, commit, blob, SHA-256)', () => {
+    const row = readFileSync(join(ROOT, 'deployments', 'SOURCE.md'), 'utf8').split('\n').find((l) => l.startsWith('| `reference-set.json` |'));
+    expect(row).toBeDefined();
+    for (const pin of ['acedward/mip-0018-midnight-contracts', 'cb6c675ddbbb4a82d0bcaf87ad863c934becce31', '0cc572fb247bbf2ed04703be046ca78cded6bd3a', '6b37b56af510d3483899e04690762b12dc0a059853ed07fdd4036e5c2bf6a40b']) {
+      expect(row).toContain(pin);
+    }
+  });
 });
+
+describe('copied scripts (scripts/SOURCE.md)', () => {
+  it('records every script adapted from acedward/mip-0018-midnight-contracts @ cb6c675, with its upstream blob and SHA-256', () => {
+    const rows = readFileSync(join(ROOT, 'scripts', 'SOURCE.md'), 'utf8').split('\n').filter((l) => /^\| `[^`]+` \| `scripts\//.test(l));
+    const files = rows.map((l) => /^\| `([^`]+)`/.exec(l)![1]);
+    expect(files).toEqual(expect.arrayContaining(['staged-deploy.ts', 'profile.ts', 'stranger-check.ts', 'compile.sh']));
+    const compile = rows.find((l) => l.startsWith('| `compile.sh` |'))!;
+    expect(compile).toContain('ef5bb6a83992b1cd5d2bafffa560637f96c06abc');
+    expect(compile).toContain('62caa8cf29abcb213d8b00cd53a0deb0ce0cfd05049564d6a964663c934e0ad2');
+  });
+});
+
