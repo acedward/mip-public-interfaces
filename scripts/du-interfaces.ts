@@ -25,7 +25,16 @@ import { declarationBody, declarationDoc, type PlannedStep, type Template, type 
 interface Slot {
   sealed: boolean;
   type: string;
+  /** The file that declares the field in the deployed contract: a path under `contracts/`, or
+   *  `generated` for the contract's own source (the own unshielded template). For the bundle's
+   *  provenance record (scripts/bundle.ts); the field's name is in contract-info.json. */
+  from: string;
 }
+
+const TM = 'TokenMetadata.compact';
+const NST = 'vendor/openzeppelin/token/NativeShieldedToken.compact';
+const CORE = 'vendor/openzeppelin/token/NativeShieldedTokenCore.compact';
+const FT = 'vendor/openzeppelin/token/FungibleToken.compact';
 
 /**
  * The deployed ledger of each template, slot by slot (`contracts/managed/<ID>/compiler/
@@ -36,40 +45,40 @@ const EITHER_ACCOUNT = 'Either<Bytes<32>, ContractAddress>';
 const LEDGER: Record<Template, Slot[]> = {
   // TokenMetadata.emitterSecretHash; NativeShieldedToken._domain; NativeShieldedTokenCore._isInitialized, _name, _symbol, _decimals
   NativeShieldedToken: [
-    { sealed: true, type: 'Bytes<32>' },
-    { sealed: true, type: 'Bytes<32>' },
-    { sealed: false, type: 'Boolean' },
-    { sealed: true, type: 'Opaque<"string">' },
-    { sealed: true, type: 'Opaque<"string">' },
-    { sealed: true, type: 'Uint<8>' },
+    { sealed: true, type: 'Bytes<32>', from: TM },
+    { sealed: true, type: 'Bytes<32>', from: NST },
+    { sealed: false, type: 'Boolean', from: CORE },
+    { sealed: true, type: 'Opaque<"string">', from: CORE },
+    { sealed: true, type: 'Opaque<"string">', from: CORE },
+    { sealed: true, type: 'Uint<8>', from: CORE },
   ],
   NativeDualToken: [
-    { sealed: true, type: 'Bytes<32>' },
-    { sealed: true, type: 'Bytes<32>' },
-    { sealed: false, type: 'Boolean' },
-    { sealed: true, type: 'Opaque<"string">' },
-    { sealed: true, type: 'Opaque<"string">' },
-    { sealed: true, type: 'Uint<8>' },
+    { sealed: true, type: 'Bytes<32>', from: TM },
+    { sealed: true, type: 'Bytes<32>', from: NST },
+    { sealed: false, type: 'Boolean', from: CORE },
+    { sealed: true, type: 'Opaque<"string">', from: CORE },
+    { sealed: true, type: 'Opaque<"string">', from: CORE },
+    { sealed: true, type: 'Uint<8>', from: CORE },
   ],
   // TokenMetadata.emitterSecretHash; FungibleToken._isInitialized, _balances, _allowances, _totalSupply, _name, _symbol, _decimals
   FungibleToken: [
-    { sealed: true, type: 'Bytes<32>' },
-    { sealed: false, type: 'Boolean' },
-    { sealed: false, type: `Map<${EITHER_ACCOUNT}, Uint<128>>` },
-    { sealed: false, type: `Map<${EITHER_ACCOUNT}, Map<${EITHER_ACCOUNT}, Uint<128>>>` },
-    { sealed: false, type: 'Uint<128>' },
-    { sealed: true, type: 'Opaque<"string">' },
-    { sealed: true, type: 'Opaque<"string">' },
-    { sealed: true, type: 'Uint<8>' },
+    { sealed: true, type: 'Bytes<32>', from: TM },
+    { sealed: false, type: 'Boolean', from: FT },
+    { sealed: false, type: `Map<${EITHER_ACCOUNT}, Uint<128>>`, from: FT },
+    { sealed: false, type: `Map<${EITHER_ACCOUNT}, Map<${EITHER_ACCOUNT}, Uint<128>>>`, from: FT },
+    { sealed: false, type: 'Uint<128>', from: FT },
+    { sealed: true, type: 'Opaque<"string">', from: FT },
+    { sealed: true, type: 'Opaque<"string">', from: FT },
+    { sealed: true, type: 'Uint<8>', from: FT },
   ],
   // TokenMetadata.emitterSecretHash; the own template's _name, _symbol, _decimals, _domain, _mints
   NativeUnshieldedToken: [
-    { sealed: true, type: 'Bytes<32>' },
-    { sealed: true, type: 'Opaque<"string">' },
-    { sealed: true, type: 'Opaque<"string">' },
-    { sealed: true, type: 'Uint<8>' },
-    { sealed: true, type: 'Bytes<32>' },
-    { sealed: false, type: 'Counter' },
+    { sealed: true, type: 'Bytes<32>', from: TM },
+    { sealed: true, type: 'Opaque<"string">', from: 'generated' },
+    { sealed: true, type: 'Opaque<"string">', from: 'generated' },
+    { sealed: true, type: 'Uint<8>', from: 'generated' },
+    { sealed: true, type: 'Bytes<32>', from: 'generated' },
+    { sealed: false, type: 'Counter', from: 'generated' },
   ],
 };
 
@@ -98,6 +107,101 @@ const OZ_MODULES: Record<Template, string[]> = {
 
 /** Which OpenZeppelin module files a template's interface adapts code from (for its NOTICE). */
 export const ozModulesOf = (template: Template): readonly string[] => OZ_MODULES[template];
+
+/**
+ * The module file each LOCAL circuit of a generated interface is written out from, by the local
+ * name's prefix (the local name = prefix + the module's circuit name). scripts/bundle.ts records
+ * it in each HIDDEN bundle's SOURCE.md; test/dual-interfaces.test.ts checks every local body
+ * against its module's, names aside. Longest prefix first.
+ */
+export const LOCAL_CIRCUIT_ORIGINS: readonly { readonly prefix: string; readonly file: string }[] = [
+  { prefix: 'oz_utils_', file: 'vendor/openzeppelin/utils/Utils.compact' },
+  { prefix: 'oz_core_', file: CORE },
+  { prefix: 'oz_nst_', file: NST },
+  { prefix: 'oz_ft_', file: FT },
+  { prefix: 'oci_', file: 'OffChainInterface.compact' },
+  { prefix: 'tm_', file: TM },
+];
+
+/** One circuit definition of a Compact source. */
+export interface CompactCircuit {
+  readonly name: string;
+  readonly exported: boolean;
+  readonly pure: boolean;
+  /** From the name to the closing brace of the body, comments removed, whitespace collapsed. */
+  readonly text: string;
+}
+
+/**
+ * A Compact source without its comments (`clean`), and the same text with every string literal's
+ * content blanked (`mask`, index for index): circuits and braces are searched in `mask`, so a
+ * string such as "one circuit call" or a JSON value's braces is never read as code.
+ */
+function scanSource(source: string): { clean: string; mask: string } {
+  let clean = '';
+  let mask = '';
+  for (let i = 0; i < source.length;) {
+    const c = source[i]!;
+    const next = source[i + 1];
+    if (c === '/' && next === '/') {
+      while (i < source.length && source[i] !== '\n') i += 1;
+    } else if (c === '/' && next === '*') {
+      const close = source.indexOf('*/', i + 2);
+      i = close < 0 ? source.length : close + 2;
+      clean += ' ';
+      mask += ' ';
+    } else if (c === '"') {
+      let j = i + 1;
+      while (j < source.length && source[j] !== '"') j += source[j] === '\\' ? 2 : 1;
+      const literal = source.slice(i, j + 1);
+      clean += literal;
+      mask += `"${' '.repeat(Math.max(0, literal.length - 2))}"`;
+      i = j + 1;
+    } else {
+      clean += c;
+      mask += c;
+      i += 1;
+    }
+  }
+  return { clean, mask };
+}
+
+/** Every circuit definition of a Compact source (comments and string contents ignored; bodies by brace matching). */
+export function circuitsOf(source: string): CompactCircuit[] {
+  const { clean, mask } = scanSource(source);
+  const out: CompactCircuit[] = [];
+  for (const m of mask.matchAll(/(export\s+)?(pure\s+)?circuit\s+([A-Za-z0-9_]+)/g)) {
+    const open = mask.indexOf('{', m.index! + m[0].length);
+    if (open < 0) throw new Error(`circuit ${m[3]} has no body`);
+    let depth = 0;
+    let end = open;
+    for (; end < mask.length; end += 1) {
+      if (mask[end] === '{') depth += 1;
+      else if (mask[end] === '}' && (depth -= 1) === 0) break;
+    }
+    if (depth !== 0) throw new Error(`circuit ${m[3]}: unbalanced braces`);
+    const nameAt = m.index! + m[0].length - m[3]!.length;
+    out.push({ name: m[3]!, exported: m[1] !== undefined, pure: m[2] !== undefined, text: clean.slice(nameAt, end + 1).split(/\s+/).join(' ') });
+  }
+  return out;
+}
+
+/** A local circuit of a generated interface: the module circuit it is written out from. */
+export interface LocalCircuit {
+  readonly local: string;
+  readonly file: string;
+  readonly upstream: string;
+  readonly pure: boolean;
+}
+
+/** The local (non-exported) circuits of an interface source and their origins; a local circuit of unknown origin throws. */
+export function localCircuitsOf(source: string): LocalCircuit[] {
+  return circuitsOf(source).filter((c) => !c.exported).map((c) => {
+    const origin = LOCAL_CIRCUIT_ORIGINS.find((o) => c.name.startsWith(o.prefix));
+    if (origin === undefined) throw new Error(`local circuit ${c.name} has no known origin (LOCAL_CIRCUIT_ORIGINS)`);
+    return { local: c.name, file: origin.file, upstream: c.name.slice(origin.prefix.length), pure: c.pure };
+  });
+}
 
 // ---------------------------------------------------------------------------
 // the module circuits, written out (ledger slots: 1 = TokenMetadata.emitterSecretHash)

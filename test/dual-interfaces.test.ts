@@ -19,6 +19,7 @@ import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { type BundleRecord, buildBundles } from '../scripts/bundle.js';
+import { circuitsOf, LOCAL_CIRCUIT_ORIGINS, localCircuitsOf } from '../scripts/du-interfaces.js';
 import { simulatePi } from '../scripts/simulate-pi.js';
 
 const ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..');
@@ -237,6 +238,53 @@ describe('the DU bundles (bundles/<ID>/, deployments/bundles.json)', () => {
     expect(source).toContain('| Apache-2.0 AND MIT (the adapted MIT code: NOTICE) |');
     expect(readFileSync(join(dir, 'src', `${id}.Interface.compact`), 'utf8').split('\n')[0]).toBe('// SPDX-License-Identifier: Apache-2.0 AND MIT');
     expect(TEMPLATE[id]).toBeDefined();
+  });
+});
+
+/**
+ * Audit 03-E1b, finding E1b-C3: each HIDDEN bundle's SOURCE.md records how its interface ADAPTS the
+ * module code (every local circuit and its upstream circuit, every hidden slot and its deployed
+ * field, what is published and what is not) — and the record's central claim is checked here, body
+ * by body: a local circuit IS its module circuit, but for the ledger field names (hiddenN) and the
+ * names of the circuits it calls (their local names).
+ */
+const MODULE_IMPORT_PREFIXES = ['Core_', 'Utils_'];
+const moduleText = (text: string): string => MODULE_IMPORT_PREFIXES.reduce((t, p) => t.replace(new RegExp(`\\b${p}`, 'g'), ''), text);
+const localText = (text: string, fields: readonly string[]): string => {
+  let t = text;
+  fields.forEach((field, i) => { t = t.replace(new RegExp(`\\bhidden${i + 1}\\b`, 'g'), field); });
+  for (const { prefix } of LOCAL_CIRCUIT_ORIGINS) t = t.replace(new RegExp(`\\b${prefix}(?=[A-Za-z_])`, 'g'), '');
+  return t;
+};
+
+describe('the HIDDEN interfaces adapt the module code, and each bundle records how (SOURCE.md "Modifications")', () => {
+  it.each(IDS)('%s: every local circuit is its module circuit, body for body, but for the ledger field names and the called circuits\' names', (id) => {
+    const src = readFileSync(join(INTERFACES, `${id}.Interface.compact`), 'utf8');
+    const fields = info(id).ledger.map((l) => l.name);
+    const locals = localCircuitsOf(src);
+    expect(locals.length).toBeGreaterThanOrEqual(7);
+    const byName = new Map(circuitsOf(src).map((c) => [c.name, c]));
+    for (const l of locals) {
+      const upstream = circuitsOf(readFileSync(join(ROOT, 'contracts', l.file), 'utf8')).find((c) => c.name === l.upstream);
+      expect(upstream, `${id} ${l.local}: no circuit ${l.upstream} in contracts/${l.file}`).toBeDefined();
+      expect(l.pure, `${id} ${l.local} purity`).toBe(upstream!.pure);
+      expect(localText(byName.get(l.local)!.text, fields), `${id} ${l.local}`).toBe(moduleText(upstream!.text));
+    }
+  });
+
+  it.each(IDS)('%s: SOURCE.md records every local circuit with its upstream file and circuit, every hidden slot with its deployed field, and what is (not) published', (id) => {
+    const dir = dirOf(join(ROOT, 'bundles'), byId(id));
+    const source = readFileSync(join(dir, 'SOURCE.md'), 'utf8');
+    const src = readFileSync(join(dir, 'src', `${id}.Interface.compact`), 'utf8');
+    expect(source).toContain('## Modifications');
+    expect(source).toContain('- **Module structure removed**');
+    for (const l of localCircuitsOf(src)) expect(source, l.local).toContain(`| \`${l.local}\` | \`contracts/${l.file}\` | \`${l.upstream}\` |`);
+    const deployed = info(id);
+    deployed.ledger.forEach((field, i) => expect(source, field.name).toMatch(new RegExp(`\\| \`(?:sealed )?ledger hidden${i + 1}: [^\`]+\` \\| \`${field.name}\` \\|`)));
+    const exported = circuitsOf(src).filter((c) => c.exported).map((c) => c.name);
+    expect(exported.sort()).toEqual(deployed.circuits.filter((c) => !c.pure).map((c) => c.name).sort());
+    expect(source).toContain(`- **Published** (exported, under the deployed entry point names, ${exported.length} circuits)`);
+    for (const c of deployed.circuits.filter((x) => x.pure)) expect(source).toContain(`\`${c.name}()\` (no verifier key on chain)`);
   });
 });
 

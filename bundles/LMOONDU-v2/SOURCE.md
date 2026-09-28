@@ -15,3 +15,55 @@ Its local circuits are adapted — not copied as files — from these pinned ups
 | `contracts/vendor/openzeppelin/token/FungibleToken.compact` | [`OpenZeppelin/compact-contracts`](https://github.com/OpenZeppelin/compact-contracts) `contracts/src/token/FungibleToken.compact` | `v0.4.0-alpha.3 (2109614046377d883094a1d7618ecce1f26c0fe8)` | `78047c735811c133b82369c9e23acf49a9706d0473dfa959d9cf7eea2ef42021` | MIT |
 | `contracts/vendor/openzeppelin/utils/Utils.compact` | [`OpenZeppelin/compact-contracts`](https://github.com/OpenZeppelin/compact-contracts) `contracts/src/utils/Utils.compact` | `v0.4.0-alpha.3 (2109614046377d883094a1d7618ecce1f26c0fe8)` | `215d6374bb22a7c950bb43d046f6380f2c432fb841a2fcead2a35766d159f314` | MIT |
 | `compact-examples/fungible-private/Interface.compact` (not vendored; its form and explanatory header) | [`acedward/public-interfaces-for-compact-contracts`](https://github.com/acedward/public-interfaces-for-compact-contracts) `compact-examples/fungible-private/Interface.compact` | `1cf947786d55739ec4e89aef9258ebef0d8687fa` | `187162e5a8bf23fd43c16591ca1a28d55e50570bcd5eacc2724f6215931e43f3` | MIT, Copyright (c) 2025 Zeppelin Group Ltd |
+
+## Modifications
+
+`src/LMOONDU.Interface.compact` is not a copy of any file above: `scripts/du-interfaces.ts` writes it (`scripts/SOURCE.md` of this repository). Against the upstream files:
+
+- **Module structure removed**: no `module` block, no `import` but `CompactStandardLibrary`, no constructor, no initializer (`initializeEmitter`, `initialize`), no module exports.
+- **Module circuits written out as LOCAL circuits** (not exported): every module circuit a published circuit calls (directly or through another), its body as in the upstream file — only the ledger field names (next table) and the names of the circuits it calls (their local names) differ:
+
+| Local circuit | Upstream file | Upstream circuit |
+|---|---|---|
+| `tm_EVENT_NAME` | `contracts/TokenMetadata.compact` | `EVENT_NAME` |
+| `tm_ONE_PART_VALUE_SIZE` | `contracts/TokenMetadata.compact` | `ONE_PART_VALUE_SIZE` |
+| `tm_emitterSecretHashOf` | `contracts/TokenMetadata.compact` | `emitterSecretHashOf` |
+| `tm_assertEmitter` | `contracts/TokenMetadata.compact` | `assertEmitter` |
+| `tm_emitHead` | `contracts/TokenMetadata.compact` | `emitHead` |
+| `tm_emitPart` | `contracts/TokenMetadata.compact` | `emitPart` |
+| `tm_emitTokenMetadata` | `contracts/TokenMetadata.compact` | `emitTokenMetadata` |
+| `oci_publishBundle` | `contracts/OffChainInterface.compact` | `publishBundle` |
+| `oz_utils_canonicalize` | `contracts/vendor/openzeppelin/utils/Utils.compact` | `canonicalize` |
+| `oz_utils_zeroAccount` | `contracts/vendor/openzeppelin/utils/Utils.compact` | `zeroAccount` |
+| `oz_utils_isTargetZero` | `contracts/vendor/openzeppelin/utils/Utils.compact` | `isTargetZero` |
+| `oz_utils_computeAccountId` | `contracts/vendor/openzeppelin/utils/Utils.compact` | `computeAccountId` |
+| `oz_ft_assertInitialized` | `contracts/vendor/openzeppelin/token/FungibleToken.compact` | `assertInitialized` |
+| `oz_ft_name` | `contracts/vendor/openzeppelin/token/FungibleToken.compact` | `name` |
+| `oz_ft_symbol` | `contracts/vendor/openzeppelin/token/FungibleToken.compact` | `symbol` |
+| `oz_ft_decimals` | `contracts/vendor/openzeppelin/token/FungibleToken.compact` | `decimals` |
+| `oz_ft_totalSupply` | `contracts/vendor/openzeppelin/token/FungibleToken.compact` | `totalSupply` |
+| `oz_ft_balanceOf` | `contracts/vendor/openzeppelin/token/FungibleToken.compact` | `balanceOf` |
+| `oz_ft__computeAccountId` | `contracts/vendor/openzeppelin/token/FungibleToken.compact` | `_computeAccountId` |
+| `oz_ft__update` | `contracts/vendor/openzeppelin/token/FungibleToken.compact` | `_update` |
+| `oz_ft__unsafeUncheckedTransfer` | `contracts/vendor/openzeppelin/token/FungibleToken.compact` | `_unsafeUncheckedTransfer` |
+| `oz_ft__unsafeTransfer` | `contracts/vendor/openzeppelin/token/FungibleToken.compact` | `_unsafeTransfer` |
+| `oz_ft_transfer` | `contracts/vendor/openzeppelin/token/FungibleToken.compact` | `transfer` |
+| `oz_ft__unsafeMint` | `contracts/vendor/openzeppelin/token/FungibleToken.compact` | `_unsafeMint` |
+| `oz_ft__mint` | `contracts/vendor/openzeppelin/token/FungibleToken.compact` | `_mint` |
+
+- **The ledger declared slot by slot under hidden names** (the deployed contract's order and types; nothing reads it by name):
+
+| Slot | Deployed field | Declared in |
+|---|---|---|
+| `sealed ledger hidden1: Bytes<32>` | `emitterSecretHash` | `contracts/TokenMetadata.compact` |
+| `ledger hidden2: Boolean` | `_isInitialized` | `contracts/vendor/openzeppelin/token/FungibleToken.compact` |
+| `ledger hidden3: Map<Either<Bytes<32>, ContractAddress>, Uint<128>>` | `_balances` | `contracts/vendor/openzeppelin/token/FungibleToken.compact` |
+| `ledger hidden4: Map<Either<Bytes<32>, ContractAddress>, Map<Either<Bytes<32>, ContractAddress>, Uint<128>>>` | `_allowances` | `contracts/vendor/openzeppelin/token/FungibleToken.compact` |
+| `ledger hidden5: Uint<128>` | `_totalSupply` | `contracts/vendor/openzeppelin/token/FungibleToken.compact` |
+| `sealed ledger hidden6: Opaque<"string">` | `_name` | `contracts/vendor/openzeppelin/token/FungibleToken.compact` |
+| `sealed ledger hidden7: Opaque<"string">` | `_symbol` | `contracts/vendor/openzeppelin/token/FungibleToken.compact` |
+| `sealed ledger hidden8: Uint<8>` | `_decimals` | `contracts/vendor/openzeppelin/token/FungibleToken.compact` |
+
+- **Published** (exported, under the deployed entry point names, 16 circuits): `name`, `symbol`, `decimals`, `totalSupply`, `balanceOf`, `transfer`, `mint`, `publishName`, `publishSymbol`, `publishDecimals`, `publishRepository`, `publishName2`, `publishDescription`, `clearDescription`, `publishDescription2`, `publishBundle` — the deployed contract's own circuits (`contracts/generated/LMOONDU.compact`, this repository), their module calls pointed at the local circuits above.
+- **Not published**: the pure circuit `kind()` (no verifier key on chain), the constructor, and every upstream circuit not in the first table.
+- **Header and form**: the explanatory header and the private form follow the example named above, reworded for this contract (every impure circuit published, the module circuits written out, the witnesses named).

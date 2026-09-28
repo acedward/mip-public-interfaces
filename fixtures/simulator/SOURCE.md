@@ -24,11 +24,11 @@ regenerates into a temporary directory and compares.
 | `deployments/generated-matrix.json` | `9b813052eb95aaf49df850c2c10554504c7a2e2d22a6567802609513a92a5e9c` |
 | `deployments/dual-set.json` | `acd6362d3cbb86786b4cde9cc580473b4c03636279b765b4e505b420d7f85acc` |
 | `deployments/dual-matrix.json` | `27b1996855b8f1a6c2d719833d2d2f483e455a3753afd444173f902ad47965af` |
-| `deployments/bundles.json` | `17b8ad6ca5cc94e0a316582210bf9b3191d9ed6ae29f1e5f438be07c52ae2591` |
+| `deployments/bundles.json` | `01f1e29152b118cd02598bedee48d70a16e01246ef149d53098d0feff6e90a35` |
 | `scripts/generate-pi-contracts.ts` | `5b4e94e33fbadf8b3d2b1702ee8e93402aeb1450fb9a48c6ff4eb2683cf3e8cc` |
 | `scripts/generate-du-contracts.ts` | `287ea9a15c7af8fc73587deb3c637e060bd86e0b2acd46f4c3f70263be388a4a` |
-| `scripts/du-interfaces.ts` | `111d8e956f7608bf0d3a3572ccd30270ceb581bc56fa480c52d193c375c0848d` |
-| `scripts/bundle.ts` | `efaad6fde39e2a8c300e42bf6a214f02498ef11669c37d278e4c5789600d17eb` |
+| `scripts/du-interfaces.ts` | `013deab5add227125d9276cfaeafd9aecd8c268d71b1b49420e1def0878d6ef5` |
+| `scripts/bundle.ts` | `fb9117cf64538b8b6710599a2fd610a2c066a4d1e4209c0d83756a899309f308` |
 | `scripts/simulate-pi.ts` | `014611f0c687c01cbe132c539bbda2f916e100708ce682a5b6275ea970d24c2d` |
 | `scripts/export-fixtures.ts` | `f3fdded26bcd7ea57e74391c6a3edc9fbb51bfa54ac7119018e4082820d5a414` |
 | `contracts/TokenMetadata.compact` | `7d16b4da4209f48815da07950513bbd58b2f14d795db8fe54f7fd2d5b7fb5847` |
@@ -67,5 +67,5 @@ Compiled artefacts (every committed file of `contracts/managed/<ID>/`, as one di
 
 | File | SHA-256 |
 | --- | --- |
-| `fixtures/simulator/events.json` | `a253424d54336e8ea8c57acb99ac5dcbe966baec9887587309edb4397a94473f` |
-| `fixtures/simulator/interfaces.json` | `ca70051b2291dd48312edf161634ba734e89a4fb6370a7adad30361c261fb704` |
+| `fixtures/simulator/events.json` | `c298df8538b32d43effb65ffdd9f8d46c6ebdb9efa57ee6693be7389de3da9e9` |
+| `fixtures/simulator/interfaces.json` | `e4c29bfec7142c32361aa012144c6c5c2c4b67d2cc91b9e796259ebdd874785e` |

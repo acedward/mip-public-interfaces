@@ -16,3 +16,49 @@ Its local circuits are adapted — not copied as files — from these pinned ups
 | `contracts/vendor/openzeppelin/token/NativeShieldedTokenCore.compact` | [`OpenZeppelin/compact-contracts`](https://github.com/OpenZeppelin/compact-contracts) `contracts/src/token/NativeShieldedTokenCore.compact` | `v0.4.0-alpha.3 (2109614046377d883094a1d7618ecce1f26c0fe8)` | `1edaac1a5f4a53cf102c78216272852633afd55e3cd8bf9ab146f62e679f33a6` | MIT |
 | `contracts/vendor/openzeppelin/utils/Utils.compact` | [`OpenZeppelin/compact-contracts`](https://github.com/OpenZeppelin/compact-contracts) `contracts/src/utils/Utils.compact` | `v0.4.0-alpha.3 (2109614046377d883094a1d7618ecce1f26c0fe8)` | `215d6374bb22a7c950bb43d046f6380f2c432fb841a2fcead2a35766d159f314` | MIT |
 | `compact-examples/fungible-private/Interface.compact` (not vendored; its form and explanatory header) | [`acedward/public-interfaces-for-compact-contracts`](https://github.com/acedward/public-interfaces-for-compact-contracts) `compact-examples/fungible-private/Interface.compact` | `1cf947786d55739ec4e89aef9258ebef0d8687fa` | `187162e5a8bf23fd43c16591ca1a28d55e50570bcd5eacc2724f6215931e43f3` | MIT, Copyright (c) 2025 Zeppelin Group Ltd |
+
+## Modifications
+
+`src/SNEBDU.Interface.compact` is not a copy of any file above: `scripts/du-interfaces.ts` writes it (`scripts/SOURCE.md` of this repository). Against the upstream files:
+
+- **Module structure removed**: no `module` block, no `import` but `CompactStandardLibrary`, no constructor, no initializer (`initializeEmitter`, `initialize`), no module exports.
+- **Module circuits written out as LOCAL circuits** (not exported): every module circuit a published circuit calls (directly or through another), its body as in the upstream file — only the ledger field names (next table) and the names of the circuits it calls (their local names) differ:
+
+| Local circuit | Upstream file | Upstream circuit |
+|---|---|---|
+| `tm_EVENT_NAME` | `contracts/TokenMetadata.compact` | `EVENT_NAME` |
+| `tm_ONE_PART_VALUE_SIZE` | `contracts/TokenMetadata.compact` | `ONE_PART_VALUE_SIZE` |
+| `tm_emitterSecretHashOf` | `contracts/TokenMetadata.compact` | `emitterSecretHashOf` |
+| `tm_assertEmitter` | `contracts/TokenMetadata.compact` | `assertEmitter` |
+| `tm_emitHead` | `contracts/TokenMetadata.compact` | `emitHead` |
+| `tm_emitPart` | `contracts/TokenMetadata.compact` | `emitPart` |
+| `tm_emitTokenMetadata` | `contracts/TokenMetadata.compact` | `emitTokenMetadata` |
+| `oci_publishBundle` | `contracts/OffChainInterface.compact` | `publishBundle` |
+| `oz_utils_isContractAddress` | `contracts/vendor/openzeppelin/utils/Utils.compact` | `isContractAddress` |
+| `oz_utils_isKeyOrAddressZero` | `contracts/vendor/openzeppelin/utils/Utils.compact` | `isKeyOrAddressZero` |
+| `oz_core_assertInitialized` | `contracts/vendor/openzeppelin/token/NativeShieldedTokenCore.compact` | `assertInitialized` |
+| `oz_core_name` | `contracts/vendor/openzeppelin/token/NativeShieldedTokenCore.compact` | `name` |
+| `oz_core_symbol` | `contracts/vendor/openzeppelin/token/NativeShieldedTokenCore.compact` | `symbol` |
+| `oz_core_decimals` | `contracts/vendor/openzeppelin/token/NativeShieldedTokenCore.compact` | `decimals` |
+| `oz_core_tokenColor` | `contracts/vendor/openzeppelin/token/NativeShieldedTokenCore.compact` | `tokenColor` |
+| `oz_core__mint` | `contracts/vendor/openzeppelin/token/NativeShieldedTokenCore.compact` | `_mint` |
+| `oz_nst_name` | `contracts/vendor/openzeppelin/token/NativeShieldedToken.compact` | `name` |
+| `oz_nst_symbol` | `contracts/vendor/openzeppelin/token/NativeShieldedToken.compact` | `symbol` |
+| `oz_nst_decimals` | `contracts/vendor/openzeppelin/token/NativeShieldedToken.compact` | `decimals` |
+| `oz_nst_tokenColor` | `contracts/vendor/openzeppelin/token/NativeShieldedToken.compact` | `tokenColor` |
+| `oz_nst__mint` | `contracts/vendor/openzeppelin/token/NativeShieldedToken.compact` | `_mint` |
+
+- **The ledger declared slot by slot under hidden names** (the deployed contract's order and types; nothing reads it by name):
+
+| Slot | Deployed field | Declared in |
+|---|---|---|
+| `sealed ledger hidden1: Bytes<32>` | `emitterSecretHash` | `contracts/TokenMetadata.compact` |
+| `sealed ledger hidden2: Bytes<32>` | `_domain` | `contracts/vendor/openzeppelin/token/NativeShieldedToken.compact` |
+| `ledger hidden3: Boolean` | `_isInitialized` | `contracts/vendor/openzeppelin/token/NativeShieldedTokenCore.compact` |
+| `sealed ledger hidden4: Opaque<"string">` | `_name` | `contracts/vendor/openzeppelin/token/NativeShieldedTokenCore.compact` |
+| `sealed ledger hidden5: Opaque<"string">` | `_symbol` | `contracts/vendor/openzeppelin/token/NativeShieldedTokenCore.compact` |
+| `sealed ledger hidden6: Uint<8>` | `_decimals` | `contracts/vendor/openzeppelin/token/NativeShieldedTokenCore.compact` |
+
+- **Published** (exported, under the deployed entry point names, 13 circuits): `name`, `symbol`, `decimals`, `domainSep`, `tokenColor`, `mint`, `publishName`, `publishSymbol`, `publishDecimals`, `publishRepository`, `publishMetadata`, `publishMetadataDescription`, `publishBundle` — the deployed contract's own circuits (`contracts/generated/SNEBDU.compact`, this repository), their module calls pointed at the local circuits above.
+- **Not published**: the pure circuit `kind()` (no verifier key on chain), the constructor, and every upstream circuit not in the first table.
+- **Header and form**: the explanatory header and the private form follow the example named above, reworded for this contract (every impure circuit published, the module circuits written out, the witnesses named).

@@ -40,7 +40,7 @@ import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } fr
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-import { ozModulesOf } from './du-interfaces.js';
+import { circuitsOf, ledgerOf, localCircuitsOf, ozModulesOf } from './du-interfaces.js';
 import type { Template } from './generate-du-contracts.js';
 
 const ROOT = path.resolve(new URL(import.meta.url).pathname, '..', '..');
@@ -243,8 +243,45 @@ function hiddenLicenceFiles(id: string, sources: string[], srcRoot: string, temp
     '| Upstream file | Origin | Commit | SHA-256 | Licence |', '|---|---|---|---|---|',
     ...adapted.map(({ file, pin }) => `| \`contracts/${file}\` | [\`${pin.upstream}\`](${pin.url}) \`${pin.path}\` | \`${pin.commit}\` | \`${pin.sha256}\` | ${pin.licence} |`),
     `| \`${ex.path}\` (not vendored; its form and explanatory header) | [\`${ex.upstream}\`](${ex.url}) \`${ex.path}\` | \`${ex.commit}\` | \`${ex.sha256}\` | ${ex.licence} |`, '',
+    ...modificationRecord(id, inBundle, readFileSync(abs, 'utf8'), template),
   ].join('\n');
   return { LICENSE: readFileSync(path.join(ROOT, 'LICENSE'), 'utf8'), NOTICE: notice, 'SOURCE.md': source };
+}
+
+/**
+ * The MODIFICATIONS a HIDDEN interface makes to the code it adapts (audit 03-E1b, finding E1b-C3),
+ * as a section of the bundle's SOURCE.md, derived from the interface source itself: the module
+ * structure removed; every local circuit and the module circuit it is written out from (its body
+ * the module's, but for the ledger field names and the called circuits' names —
+ * test/dual-interfaces.test.ts checks it body by body); the ledger declared slot by slot under
+ * hidden names, each slot's field and declaring file; what is published and what is not.
+ */
+function modificationRecord(id: string, inBundle: string, source: string, template: Template): string[] {
+  const info = JSON.parse(readFileSync(path.join(ROOT, 'contracts', 'managed', id, 'compiler', 'contract-info.json'), 'utf8')) as {
+    ledger: { name: string }[];
+    circuits: { name: string; pure: boolean }[];
+  };
+  const slots = ledgerOf(template);
+  if (slots.length !== info.ledger.length) throw new Error(`${id}: ${slots.length} interface slots, the deployed contract has ${info.ledger.length}`);
+  const locals = localCircuitsOf(source);
+  const exported = circuitsOf(source).filter((c) => c.exported).map((c) => c.name);
+  const pure = info.circuits.filter((c) => c.pure).map((c) => c.name);
+  const declaredIn = (from: string) => (from === 'generated' ? `\`contracts/generated/${id}.compact\` (this repository's own unshielded template)` : `\`contracts/${from}\``);
+  return [
+    '## Modifications', '',
+    `\`${inBundle}\` is not a copy of any file above: \`scripts/du-interfaces.ts\` writes it (\`scripts/SOURCE.md\` of this repository). Against the upstream files:`, '',
+    '- **Module structure removed**: no `module` block, no `import` but `CompactStandardLibrary`, no constructor, no initializer (`initializeEmitter`, `initialize`), no module exports.',
+    '- **Module circuits written out as LOCAL circuits** (not exported): every module circuit a published circuit calls (directly or through another), its body as in the upstream file — only the ledger field names (next table) and the names of the circuits it calls (their local names) differ:', '',
+    '| Local circuit | Upstream file | Upstream circuit |', '|---|---|---|',
+    ...locals.map((l) => `| \`${l.local}\` | \`contracts/${l.file}\` | \`${l.upstream}\` |`), '',
+    `- **The ledger declared slot by slot under hidden names** (the deployed contract's order and types; nothing reads it by name):`, '',
+    '| Slot | Deployed field | Declared in |', '|---|---|---|',
+    ...slots.map((slot, i) => `| \`${slot.sealed ? 'sealed ' : ''}ledger hidden${i + 1}: ${slot.type}\` | \`${info.ledger[i]!.name}\` | ${declaredIn(slot.from)} |`), '',
+    `- **Published** (exported, under the deployed entry point names, ${exported.length} circuits): ${exported.map((c) => `\`${c}\``).join(', ')} — the deployed contract's own circuits (\`contracts/generated/${id}.compact\`, this repository), their module calls pointed at the local circuits above.`,
+    `- **Not published**: the pure circuit${pure.length === 1 ? '' : 's'} ${pure.map((c) => `\`${c}()\``).join(', ')} (no verifier key on chain), the constructor, and every upstream circuit not in the first table.`,
+    '- **Header and form**: the explanatory header and the private form follow the example named above, reworded for this contract (every impure circuit published, the module circuits written out, the witnesses named).',
+    '',
+  ];
 }
 
 /**
