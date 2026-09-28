@@ -136,7 +136,12 @@ Multi-Part Event reader; `scripts/publish-dual-intent.ts` publishes it on a chai
 
 **P2 — a second valid bundle.** `bundles/LMOONDU-v2/` is LMOONDU's interface again (same source,
 same keys) at another location with one more listed file, `PUBLICATION.md` — so another
-commitment — for publishing two valid publications of one contract in the same block.
+commitment — for publishing two valid publications of one contract in the same block:
+`scripts/publish-same-block.ts` proves and balances both (two wallets, so the fees do not compete
+for one DUST output) before submitting either, submits them together right after a block
+boundary and reads each one's block and position from the indexer; `test/p2-same-block.test.ts`
+applies such a pair in one block of an in-process ledger (both valid against one pinned state)
+and checks the order rule — the later by observed position, never by submission order.
 
 **On chain** (a local Midnight 2.x chain): `scripts/deploy-and-publish.ts SNEBDU LMOONDU UMETDU
 DAURDU` deploys and runs the DU plans (LMOONDU and DAURDU in stages: 12 keys with the deploy, 4
