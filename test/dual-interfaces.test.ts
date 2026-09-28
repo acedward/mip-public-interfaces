@@ -147,6 +147,20 @@ describe('the DU bundles (bundles/<ID>/, deployments/bundles.json)', () => {
   });
   afterAll(() => rmSync(rebuilt, { recursive: true, force: true }));
 
+  it('bundles/README.md lists every bundle of deployments/bundles.json — contract, form, URL, parts — and describes both forms (audit 03-E1b, finding E1b-C4)', () => {
+    const readme = readFileSync(join(ROOT, 'bundles', 'README.md'), 'utf8');
+    const listed = (readme.match(/^\| `[^`]+` \| `[^`]+` \| (?:FULL|HIDDEN) \|.*$/gm) ?? []).map((l) => /^\| `([^`]+)`/.exec(l)![1]);
+    expect(listed).toEqual(record.bundles.map((b) => b.id));
+    for (const b of record.bundles) {
+      const row = readme.split('\n').find((l) => l.startsWith(`| \`${b.id}\` |`))!;
+      expect(row, b.id).toContain(`| \`${b.contract ?? b.id}\` | ${b.form} | \`${b.url}\``);
+      expect(row, b.id).toMatch(new RegExp(`\\| \\**${b.parts}\\** \\|$`));
+    }
+    expect(readme).toContain('**FULL** (the PI contracts');
+    expect(readme).toContain('**HIDDEN** (the DU contracts');
+    expect(readme).not.toContain('Each bundle is a **FULL** interface');
+  });
+
   it('four HIDDEN bundles, one per DU contract, after the four FULL PI bundles — LMOONDU\'s second bundle (P2) right after its first', () => {
     expect(record.bundles.map((b) => [b.id, b.form, b.contract ?? b.id])).toEqual([
       ['LSUNPI', 'FULL', 'LSUNPI'], ['SSTARPI', 'FULL', 'SSTARPI'], ['CNSTPI', 'FULL', 'CNSTPI'], ['UPROMPI', 'FULL', 'UPROMPI'],
