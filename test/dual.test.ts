@@ -212,6 +212,115 @@ describe('the deployment plan (deployments/dual-matrix.json): the twins\' metada
   });
 });
 
+/**
+ * The INDEPENDENT oracle of the twins' metadata (audit 03-E1b, finding E1b-D1): the checks above
+ * compare the plan with the generator's own output, so a generator that changed one byte of a
+ * twin's value (and wrote its outputs consistently) would pass them. Here every DU declaration is
+ * compared with its twin's package in `deployments/mip18-generated-matrix.json` — a pinned,
+ * UNMODIFIED copy of acedward/mip-0018-midnight-contracts `deployments/generated-matrix.json` @
+ * cb6c675 (deployments/SOURCE.md) — byte for byte. The variant may change exactly four things:
+ * the domain (`umbra:<twin>` → `umbra:<du>`, so the 32-byte domain separator), the twin's name
+ * inside a `name` value (`… · MIP-18` → `… · DU`, a rename's suffix kept), a `symbol` value equal
+ * to the twin's symbol, and a `repository` value equal to the twin's source URL (→ this
+ * repository's). Everything else — the key, kind, val-type, every other value byte, the parts
+ * (recomputed from the new length), the circuit, the step order and the mints — is the twin's.
+ */
+interface TwinEvent { domainSep: string; kind: number; key: string; valType: number; len: number; parts: number; value: string; text: string | null }
+interface TwinStep { kind: string; circuit: string; parts?: number; payload?: string; events?: TwinEvent[]; mintKind?: string; to?: string; amount?: string; nonce?: string | null }
+interface TwinRow { id: string; name: string; symbol: string; domain: string; steps: TwinStep[] }
+const twins = JSON.parse(readFileSync(join(ROOT, 'deployments', 'mip18-generated-matrix.json'), 'utf8')) as { rows: TwinRow[] };
+const twinOf = (id: string): TwinRow => {
+  const twin = twins.rows.find((r) => r.id === rowOf(id).twin);
+  if (!twin) throw new Error(`no twin ${rowOf(id).twin} in deployments/mip18-generated-matrix.json`);
+  return twin;
+};
+const twinRepository = (twin: TwinRow) => `https://github.com/acedward/mip-0018-midnight-contracts/blob/main/contracts/generated/${twin.id}.compact`;
+
+/** The value a DU declaration must carry, from its twin's value: only the variant's substitutions. */
+const variantValue = (twin: TwinRow, du: Row, key: string, value: Buffer): Buffer => {
+  const text = value.toString('utf8');
+  if (key === 'name') {
+    if (!text.includes(twin.name)) throw new Error(`${twin.id} name value "${text}" does not contain the twin's name`);
+    return Buffer.from(text.split(twin.name).join(du.name), 'utf8');
+  }
+  if (key === 'symbol' && text === twin.symbol) return Buffer.from(du.symbol, 'utf8');
+  if (key === 'repository' && text === twinRepository(twin)) return Buffer.from(du.repository, 'utf8');
+  return value;
+};
+
+/** The package a DU declaration must be: the twin's header and value with the variant applied. */
+const expectedPackage = (twin: TwinRow, du: Row, step: TwinStep): { parts: number; hex: string } => {
+  if (step.events?.length !== 1 || step.payload === undefined) throw new Error(`${twin.id} ${step.circuit}: a declaration step carries exactly one declaration`);
+  const twinPackage = unhex(step.payload);
+  const event = step.events[0]!;
+  expect(hex(twinPackage.subarray(0, 32))).toBe(hex(pad(32, twin.domain)));
+  const len = twinPackage[66]! | (twinPackage[67]! << 8);
+  expect(len).toBe(event.len);
+  const value = variantValue(twin, du, event.key, Buffer.from(twinPackage.subarray(68, 68 + len)));
+  const parts = Math.max(1, Math.ceil((68 + value.length) / 256));
+  const out = new Uint8Array(256 * parts);
+  out.set(pad(32, du.domain), 0);
+  out.set(twinPackage.subarray(32, 66), 32); // kind, key, val-type: the twin's
+  out[66] = value.length & 0xff;
+  out[67] = value.length >> 8;
+  out.set(value, 68);
+  return { parts, hex: hex(out) };
+};
+
+describe('the twins\' metadata against an INDEPENDENT oracle: the pinned MIP-18 plan (deployments/mip18-generated-matrix.json @ cb6c675)', () => {
+  it('the oracle holds the four twins, and each DU row names its twin', () => {
+    expect(IDS.map((id) => [id, twinOf(id).id])).toEqual([['SNEBDU', 'SNEB18'], ['LMOONDU', 'LMOON18'], ['UMETDU', 'UMET18'], ['DAURDU', 'DAUR18']]);
+  });
+
+  it.each(IDS)('%s: step for step the twin\'s plan — every declaration the twin\'s circuit, every mint the twin\'s mint — then the pointer', (id) => {
+    const du = rowOf(id);
+    const twin = twinOf(id);
+    const steps = du.steps.slice(0, -1);
+    expect(du.steps[du.steps.length - 1]?.kind).toBe('publishBundle');
+    expect(steps).toHaveLength(twin.steps.length);
+    twin.steps.forEach((t, i) => {
+      const d = steps[i]!;
+      if (t.kind === 'emit') {
+        expect([d.kind, d.circuit], `${id} step ${i}`).toEqual(['emit', t.circuit]);
+        return;
+      }
+      // A mint: LMOON18's own ledger template calls it `ledgerMint` (kind `ledger`); OpenZeppelin's FungibleToken `mint`.
+      const token = t.kind === 'ledger' ? 'ledger' : t.mintKind;
+      expect([d.kind, d.token, d.to, d.amount, d.nonce ?? null], `${id} step ${i}`).toEqual(['mint', token, t.to, t.amount, t.nonce ?? null]);
+      expect(d.circuit, `${id} step ${i}`).toBe(t.circuit === 'ledgerMint' ? 'mint' : t.circuit);
+    });
+  });
+
+  it.each(IDS)('%s: every declaration is its twin\'s package byte for byte, but for the variant\'s domain, name, symbol and repository URL', (id) => {
+    const du = rowOf(id);
+    const twin = twinOf(id);
+    const twinDeclarations = twin.steps.filter((s) => s.kind === 'emit');
+    const duDeclarations = emits(du);
+    expect(duDeclarations).toHaveLength(twinDeclarations.length);
+    twinDeclarations.forEach((t, i) => {
+      const d = duDeclarations[i]!;
+      const expected = expectedPackage(twin, du, t);
+      expect(d.circuit, `${id} declaration ${i}`).toBe(t.circuit);
+      expect(d.parts, `${id} ${d.circuit} parts`).toBe(expected.parts);
+      expect(d.payloadHex, `${id} ${d.circuit} package`).toBe(expected.hex);
+    });
+  });
+
+  it('the long values and the Null are the twins\' own: SNEBDU `metadata` = SNEB18\'s 677-byte JSON value; LMOONDU\'s Null and 377-byte `description` = LMOON18\'s', () => {
+    const valueOf = (payloadHex: string) => {
+      const p = unhex(payloadHex);
+      return Buffer.from(p.subarray(68, 68 + (p[66]! | (p[67]! << 8)))).toString('utf8');
+    };
+    const twinValue = (twinId: string, circuit: string) => valueOf(twins.rows.find((r) => r.id === twinId)!.steps.find((s) => s.circuit === circuit)!.payload!);
+    const duValue = (id: string, circuit: string) => valueOf(emits(rowOf(id)).find((d) => d.circuit === circuit)!.payloadHex);
+    expect(duValue('SNEBDU', 'publishMetadata')).toBe(twinValue('SNEB18', 'publishMetadata'));
+    expect(Buffer.byteLength(duValue('SNEBDU', 'publishMetadata'))).toBe(677);
+    expect(duValue('LMOONDU', 'publishDescription2')).toBe(twinValue('LMOON18', 'publishDescription2'));
+    expect(duValue('LMOONDU', 'clearDescription')).toBe('');
+    expect(emits(rowOf('LMOONDU')).find((d) => d.circuit === 'clearDescription')?.valType).toBe(5);
+  });
+});
+
 describe('the compiled contracts (contracts/managed/<ID>/, compactc 0.34.0)', () => {
   it.each(IDS)('%s exports the expected circuits; exactly one is pure (the constant getter)', (id) => {
     const i = info(id);

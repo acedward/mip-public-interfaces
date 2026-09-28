@@ -125,6 +125,22 @@ describe('the reference set (deployments/reference-set.json, a pinned copy — d
   });
 });
 
+describe('the MIP-18 twins\' plan (deployments/mip18-generated-matrix.json, a pinned copy — deployments/SOURCE.md)', () => {
+  it('is byte-identical to acedward/mip-0018-midnight-contracts @ cb6c675 deployments/generated-matrix.json', () => {
+    expect(sha256(readFileSync(join(ROOT, 'deployments', 'mip18-generated-matrix.json')))).toBe(
+      '5da77454807c18ce9f836ceb11e69cd27d0e044094b4b8c298e1ea5b23d47ff0',
+    );
+  });
+
+  it('deployments/SOURCE.md records that pin (upstream, commit, blob, SHA-256)', () => {
+    const row = readFileSync(join(ROOT, 'deployments', 'SOURCE.md'), 'utf8').split('\n').find((l) => l.startsWith('| `mip18-generated-matrix.json` |'));
+    expect(row).toBeDefined();
+    for (const pin of ['acedward/mip-0018-midnight-contracts', 'cb6c675ddbbb4a82d0bcaf87ad863c934becce31', '3000ae229bae3285c70ea8f58d6fd5d568aeb986', '5da77454807c18ce9f836ceb11e69cd27d0e044094b4b8c298e1ea5b23d47ff0']) {
+      expect(row).toContain(pin);
+    }
+  });
+});
+
 describe('copied scripts (scripts/SOURCE.md)', () => {
   it('records every script adapted from acedward/mip-0018-midnight-contracts @ cb6c675, with its upstream blob and SHA-256', () => {
     const rows = readFileSync(join(ROOT, 'scripts', 'SOURCE.md'), 'utf8').split('\n').filter((l) => /^\| `[^`]+` \| `scripts\//.test(l));
