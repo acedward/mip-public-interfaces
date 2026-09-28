@@ -40,7 +40,7 @@ The over-size-cap case is built to exceed a **1048576-byte** bundle cap (`limits
 | `deployments/bundles.json` | `01f1e29152b118cd02598bedee48d70a16e01246ef149d53098d0feff6e90a35` |
 | `scripts/generate-pi-contracts.ts` | `5b4e94e33fbadf8b3d2b1702ee8e93402aeb1450fb9a48c6ff4eb2683cf3e8cc` |
 | `scripts/generate-du-contracts.ts` | `287ea9a15c7af8fc73587deb3c637e060bd86e0b2acd46f4c3f70263be388a4a` |
-| `scripts/du-interfaces.ts` | `013deab5add227125d9276cfaeafd9aecd8c268d71b1b49420e1def0878d6ef5` |
+| `scripts/du-interfaces.ts` | `446ff6e52241110eb77d9996a43de60788fbd58bf811ac3c9456caef80f177c7` |
 | `scripts/bundle.ts` | `fb9117cf64538b8b6710599a2fd610a2c066a4d1e4209c0d83756a899309f308` |
 | `scripts/simulate-pi.ts` | `014611f0c687c01cbe132c539bbda2f916e100708ce682a5b6275ea970d24c2d` |
 | `scripts/export-fixtures.ts` | `f3fdded26bcd7ea57e74391c6a3edc9fbb51bfa54ac7119018e4082820d5a414` |

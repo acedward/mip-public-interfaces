@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { type BundleRecord, buildBundles } from '../scripts/bundle.js';
-import { circuitsOf, LOCAL_CIRCUIT_ORIGINS, localCircuitsOf } from '../scripts/du-interfaces.js';
+import { circuitsOf, LOCAL_CIRCUIT_ORIGINS, localCircuitsOf, mapOutsideStrings } from '../scripts/du-interfaces.js';
 import { simulatePi } from '../scripts/simulate-pi.js';
 
 const ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..');
@@ -263,12 +263,23 @@ describe('the DU bundles (bundles/<ID>/, deployments/bundles.json)', () => {
  * names of the circuits it calls (their local names).
  */
 const MODULE_IMPORT_PREFIXES = ['Core_', 'Utils_'];
-const moduleText = (text: string): string => MODULE_IMPORT_PREFIXES.reduce((t, p) => t.replace(new RegExp(`\\b${p}`, 'g'), ''), text);
-const localText = (text: string, fields: readonly string[]): string => {
-  let t = text;
-  fields.forEach((field, i) => { t = t.replace(new RegExp(`\\bhidden${i + 1}\\b`, 'g'), field); });
-  for (const { prefix } of LOCAL_CIRCUIT_ORIGINS) t = t.replace(new RegExp(`\\b${prefix}(?=[A-Za-z_])`, 'g'), '');
-  return t;
+// Identifiers only: every rename is applied OUTSIDE string literals, which are compared byte for
+// byte (audit 03-E1b, finding E1b-R2A).
+const moduleText = (text: string): string =>
+  mapOutsideStrings(text, (code) => MODULE_IMPORT_PREFIXES.reduce((t, p) => t.replace(new RegExp(`\\b${p}`, 'g'), ''), code));
+const localText = (text: string, fields: readonly string[]): string =>
+  mapOutsideStrings(text, (code) => {
+    let t = code;
+    fields.forEach((field, i) => { t = t.replace(new RegExp(`\\bhidden${i + 1}\\b`, 'g'), field); });
+    for (const { prefix } of LOCAL_CIRCUIT_ORIGINS) t = t.replace(new RegExp(`\\b${prefix}(?=[A-Za-z_])`, 'g'), '');
+    return t;
+  });
+/** Whether a local circuit (in an interface source) is its module circuit, names aside. */
+const sameAsModule = (interfaceSource: string, local: string, fields: readonly string[]): boolean => {
+  const l = localCircuitsOf(interfaceSource).find((c) => c.local === local)!;
+  const upstream = circuitsOf(readFileSync(join(ROOT, 'contracts', l.file), 'utf8')).find((c) => c.name === l.upstream)!;
+  const mine = circuitsOf(interfaceSource).find((c) => c.name === local)!;
+  return l.pure === upstream.pure && localText(mine.text, fields) === moduleText(upstream.text);
 };
 
 describe('the HIDDEN interfaces adapt the module code, and each bundle records how (SOURCE.md "Modifications")', () => {
@@ -284,6 +295,24 @@ describe('the HIDDEN interfaces adapt the module code, and each bundle records h
       expect(l.pure, `${id} ${l.local} purity`).toBe(upstream!.pure);
       expect(localText(byName.get(l.local)!.text, fields), `${id} ${l.local}`).toBe(moduleText(upstream!.text));
     }
+  });
+
+  it('negative cases: the body check sees a change inside a string literal and a change of whitespace inside one, not only of code (E1b-R2A)', () => {
+    const src = readFileSync(join(INTERFACES, 'UMETDU.Interface.compact'), 'utf8');
+    const fields = info('UMETDU').ledger.map((l) => l.name);
+    expect(sameAsModule(src, 'tm_EVENT_NAME', fields)).toBe(true);
+    expect(sameAsModule(src, 'tm_assertEmitter', fields)).toBe(true);
+    const once = (text: string, from: string, to: string) => {
+      expect(text.split(from)).toHaveLength(2);
+      return text.replace(from, to);
+    };
+    // a prefix written INTO the event name: a different event, which a rename inside literals would hide
+    expect(sameAsModule(once(src, 'pad(32, "mip-0018:token-metadata[v1]")', 'pad(32, "tm_mip-0018:token-metadata[v1]")'), 'tm_EVENT_NAME', fields)).toBe(false);
+    // a slot name written into an assert message, and a doubled space inside it
+    expect(sameAsModule(once(src, '"TokenMetadata: caller is not the emitter"', '"TokenMetadata: caller is not the hidden1"'), 'tm_assertEmitter', fields)).toBe(false);
+    expect(sameAsModule(once(src, '"TokenMetadata: caller is not the emitter"', '"TokenMetadata: caller is  not the emitter"'), 'tm_assertEmitter', fields)).toBe(false);
+    // code whitespace stays irrelevant
+    expect(sameAsModule(once(src, 'return pad(32, "mip-0018:token-metadata[v1]");', 'return   pad(32,\n "mip-0018:token-metadata[v1]");'), 'tm_EVENT_NAME', fields)).toBe(true);
   });
 
   it.each(IDS)('%s: SOURCE.md records every local circuit with its upstream file and circuit, every hidden slot with its deployed field, and what is (not) published', (id) => {

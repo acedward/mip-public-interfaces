@@ -128,7 +128,8 @@ export interface CompactCircuit {
   readonly name: string;
   readonly exported: boolean;
   readonly pure: boolean;
-  /** From the name to the closing brace of the body, comments removed, whitespace collapsed. */
+  /** From the name to the closing brace of the body, comments removed, whitespace collapsed
+   *  outside string literals (a literal is kept byte for byte). */
   readonly text: string;
 }
 
@@ -166,6 +167,23 @@ function scanSource(source: string): { clean: string; mask: string } {
   return { clean, mask };
 }
 
+/** A Compact string literal (double quotes, backslash escapes). */
+const STRING_LITERAL = /"(?:[^"\\]|\\.)*"/g;
+
+/**
+ * `f` applied to the CODE of a Compact text only: every string literal is kept byte for byte
+ * (audit 03-E1b, finding E1b-R2A — a normalization must never rewrite a literal's contents).
+ */
+export function mapOutsideStrings(text: string, f: (code: string) => string): string {
+  let out = '';
+  let at = 0;
+  for (const m of text.matchAll(STRING_LITERAL)) {
+    out += f(text.slice(at, m.index)) + m[0];
+    at = m.index! + m[0].length;
+  }
+  return out + f(text.slice(at));
+}
+
 /** Every circuit definition of a Compact source (comments and string contents ignored; bodies by brace matching). */
 export function circuitsOf(source: string): CompactCircuit[] {
   const { clean, mask } = scanSource(source);
@@ -181,7 +199,8 @@ export function circuitsOf(source: string): CompactCircuit[] {
     }
     if (depth !== 0) throw new Error(`circuit ${m[3]}: unbalanced braces`);
     const nameAt = m.index! + m[0].length - m[3]!.length;
-    out.push({ name: m[3]!, exported: m[1] !== undefined, pure: m[2] !== undefined, text: clean.slice(nameAt, end + 1).split(/\s+/).join(' ') });
+    const text = mapOutsideStrings(clean.slice(nameAt, end + 1), (code) => code.split(/\s+/).join(' '));
+    out.push({ name: m[3]!, exported: m[1] !== undefined, pure: m[2] !== undefined, text });
   }
   return out;
 }
