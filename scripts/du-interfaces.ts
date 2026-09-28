@@ -527,12 +527,12 @@ export function interfaceSource(v: Variant, planned: PlannedStep[]): string {
       : template === 'NativeDualToken'
         ? ['name', 'symbol', 'decimals', 'domainSep', 'tokenColor', 'mintShielded', 'mintUnshielded']
         : ['name', 'symbol', 'decimals', 'domainSep', 'tokenColor', 'mint']), ...declarations.map((s) => s.circuit), 'publishBundle'];
-  return `// SPDX-License-Identifier: Apache-2.0
+  return `// SPDX-License-Identifier: Apache-2.0 AND MIT
 //
 // GENERATED FILE — do not edit. Produced by scripts/generate-du-contracts.ts (scripts/du-interfaces.ts).
 //
 // The PUBLIC INTERFACE of ${v.id} (${v.name}), HIDDEN: the private form of the Public
-// Interfaces draft (compare its example compact-examples/fungible-private/Interface.compact).
+// Interfaces draft; form and header adapted from its MIT example compact-examples/fungible-private/Interface.compact.
 // The deployed contract is contracts/generated/${v.id}.compact.
 //
 // WHAT IS HIDDEN, AND WHAT IS NOT

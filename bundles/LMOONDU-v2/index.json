@@ -1,7 +1,7 @@
 {
   "bundle": "v1",
   "commitment": "ecmh-jubjub-grouphash",
-  "hash": "c7ab755a762fffec12dc4d693880966f7f3094584656a14c24d96145a9ac0032",
+  "hash": "d1c3a037767662ca2d41490b49ce0e00988f55ea31329dcbacfd8b4fb58f8bc9",
   "compiler": {
     "name": "compactc",
     "version": "0.34.0"
@@ -14,8 +14,8 @@
     },
     {
       "path": "NOTICE",
-      "sha256": "3dde2ac6c0556536cbc449d2b62553cbcdd4b527cfedca4f86ee7d7c81932bde",
-      "size": 2159
+      "sha256": "fa45e1a2d9949f38c970a287cf138eed46cb006ebb10676cd39ed2a3318b261c",
+      "size": 2599
     },
     {
       "path": "PUBLICATION.md",
@@ -29,8 +29,8 @@
     },
     {
       "path": "SOURCE.md",
-      "sha256": "8a8be4e90ec327af7f4953932ec27019cb2a4d1989c1cbdc89ebd1b88e25a6fd",
-      "size": 2455
+      "sha256": "9876554863d6815148178a01ae005efaca6fce38b21e3ba23f2d83d4576bc472",
+      "size": 2897
     },
     {
       "path": "out/compiler/contract-info.json",
@@ -139,8 +139,8 @@
     },
     {
       "path": "src/LMOONDU.Interface.compact",
-      "sha256": "92dd20b9dfd30a98e4fc89f904a0887ebe8b8b221fe3f997235837c00430410b",
-      "size": 14477
+      "sha256": "d6519000d2767fb1d6724b2bd450afb73b4e239ab45853850d19bc7c06bed58a",
+      "size": 14509
     }
   ]
 }

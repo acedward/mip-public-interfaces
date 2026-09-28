@@ -1,9 +1,9 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: Apache-2.0 AND MIT
 //
 // GENERATED FILE — do not edit. Produced by scripts/generate-du-contracts.ts (scripts/du-interfaces.ts).
 //
 // The PUBLIC INTERFACE of UMETDU (Unshielded Meteor · DU), HIDDEN: the private form of the Public
-// Interfaces draft (compare its example compact-examples/fungible-private/Interface.compact).
+// Interfaces draft; form and header adapted from its MIT example compact-examples/fungible-private/Interface.compact.
 // The deployed contract is contracts/generated/UMETDU.compact.
 //
 // WHAT IS HIDDEN, AND WHAT IS NOT

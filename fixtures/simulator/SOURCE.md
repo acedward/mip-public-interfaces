@@ -24,11 +24,11 @@ regenerates into a temporary directory and compares.
 | `deployments/generated-matrix.json` | `9b813052eb95aaf49df850c2c10554504c7a2e2d22a6567802609513a92a5e9c` |
 | `deployments/dual-set.json` | `acd6362d3cbb86786b4cde9cc580473b4c03636279b765b4e505b420d7f85acc` |
 | `deployments/dual-matrix.json` | `27b1996855b8f1a6c2d719833d2d2f483e455a3753afd444173f902ad47965af` |
-| `deployments/bundles.json` | `4b43e2e8f3701df4c1ddd78c56980315c212006942c80694799196df1e4d9744` |
+| `deployments/bundles.json` | `17b8ad6ca5cc94e0a316582210bf9b3191d9ed6ae29f1e5f438be07c52ae2591` |
 | `scripts/generate-pi-contracts.ts` | `5b4e94e33fbadf8b3d2b1702ee8e93402aeb1450fb9a48c6ff4eb2683cf3e8cc` |
 | `scripts/generate-du-contracts.ts` | `287ea9a15c7af8fc73587deb3c637e060bd86e0b2acd46f4c3f70263be388a4a` |
-| `scripts/du-interfaces.ts` | `4eea366f02dfedac4a66a315df8c4f8e7c99575fc8e6e3d8371cb82fcc2bd628` |
-| `scripts/bundle.ts` | `3dc1a5268b4f03cda7fc72f6c62064090bb792a1125e9bddb508752929fab56b` |
+| `scripts/du-interfaces.ts` | `111d8e956f7608bf0d3a3572ccd30270ceb581bc56fa480c52d193c375c0848d` |
+| `scripts/bundle.ts` | `efaad6fde39e2a8c300e42bf6a214f02498ef11669c37d278e4c5789600d17eb` |
 | `scripts/simulate-pi.ts` | `014611f0c687c01cbe132c539bbda2f916e100708ce682a5b6275ea970d24c2d` |
 | `scripts/export-fixtures.ts` | `f3fdded26bcd7ea57e74391c6a3edc9fbb51bfa54ac7119018e4082820d5a414` |
 | `contracts/TokenMetadata.compact` | `7d16b4da4209f48815da07950513bbd58b2f14d795db8fe54f7fd2d5b7fb5847` |
@@ -41,10 +41,10 @@ regenerates into a temporary directory and compares.
 | `contracts/generated/LMOONDU.compact` | `58618d98d7ab9c45e0b4ee3774f0e09591faa3b1977ea620688f9878d620a756` |
 | `contracts/generated/UMETDU.compact` | `ab28173011c2b875ba339767eb8cb1b55bbe823da7f6f247592e5611952793c4` |
 | `contracts/generated/DAURDU.compact` | `57691e5a067854d9506f418c0cb173b848f0aac0f8c33a5251c403e587068e77` |
-| `contracts/interfaces/SNEBDU.Interface.compact` | `de3c97e5ac8c8e3cb6f10cf647c4e5325414606a9604d583cee39d1dd8887a0e` |
-| `contracts/interfaces/LMOONDU.Interface.compact` | `92dd20b9dfd30a98e4fc89f904a0887ebe8b8b221fe3f997235837c00430410b` |
-| `contracts/interfaces/UMETDU.Interface.compact` | `8a66666a3d6fcf26bf2cfe3b2de47a6fdb99e0be5dadbaf2820df77be9fa8912` |
-| `contracts/interfaces/DAURDU.Interface.compact` | `03d180b924afba754c0b8e018c8a837a8abdb92e62b7d39aa010000b88f9a342` |
+| `contracts/interfaces/SNEBDU.Interface.compact` | `53d36c84e1491d0bdf6736dc541a763a951554ae18ba8970e3d927030f0ce43e` |
+| `contracts/interfaces/LMOONDU.Interface.compact` | `d6519000d2767fb1d6724b2bd450afb73b4e239ab45853850d19bc7c06bed58a` |
+| `contracts/interfaces/UMETDU.Interface.compact` | `08b32b2e51ddb20dc5b4eafc0d7721578321c35b80bfa17c2413bfd1eac3458a` |
+| `contracts/interfaces/DAURDU.Interface.compact` | `4d878ba92dd2bc9ea87ec3d7efa5ecafb70ee1ad114b74b12d1bf260be32cff8` |
 
 Compiled artefacts (every committed file of `contracts/managed/<ID>/`, as one digest):
 
@@ -67,5 +67,5 @@ Compiled artefacts (every committed file of `contracts/managed/<ID>/`, as one di
 
 | File | SHA-256 |
 | --- | --- |
-| `fixtures/simulator/events.json` | `c63d3eb4d7528cd79d0c4fe692097caea3c98afe6b25b10ea92662134eeb3cd4` |
-| `fixtures/simulator/interfaces.json` | `0a0bee28edb78d01d73e7c79e81d8ecfb278f8c7b09bbb868246a2946a0b59ff` |
+| `fixtures/simulator/events.json` | `a253424d54336e8ea8c57acb99ac5dcbe966baec9887587309edb4397a94473f` |
+| `fixtures/simulator/interfaces.json` | `ca70051b2291dd48312edf161634ba734e89a4fb6370a7adad30361c261fb704` |

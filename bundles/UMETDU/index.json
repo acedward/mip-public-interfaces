@@ -1,7 +1,7 @@
 {
   "bundle": "v1",
   "commitment": "ecmh-jubjub-grouphash",
-  "hash": "6f8599ecfe2aa87f5fab6bffa2dbf5d6509481b9921f1e495b325e3cece521b0",
+  "hash": "4e4e1d75be5f88bbf42e15283ff297d40d1a5e06210263ea1e7fc7b44fd7d8d6",
   "compiler": {
     "name": "compactc",
     "version": "0.34.0"
@@ -14,8 +14,8 @@
     },
     {
       "path": "NOTICE",
-      "sha256": "fa195eb6488c0ffa96ea03118990b984372f593f93ad9605006b803c657b68dd",
-      "size": 837
+      "sha256": "f338d0c86a7d3dc47d768272501d64312d19eb7ea285257b54e66ca7ae58ed4f",
+      "size": 2415
     },
     {
       "path": "README.md",
@@ -24,8 +24,8 @@
     },
     {
       "path": "SOURCE.md",
-      "sha256": "7d5be8b90e0946fc9ef34e108a4996a967152b51091ce2a939b4c661813dad46",
-      "size": 1759
+      "sha256": "d80ecfee803249a998cfcf7a4c1036ae5c946c0a3b0aeadb646f73ced56e40f8",
+      "size": 2241
     },
     {
       "path": "out/compiler/contract-info.json",
@@ -114,8 +114,8 @@
     },
     {
       "path": "src/UMETDU.Interface.compact",
-      "sha256": "8a66666a3d6fcf26bf2cfe3b2de47a6fdb99e0be5dadbaf2820df77be9fa8912",
-      "size": 7224
+      "sha256": "08b32b2e51ddb20dc5b4eafc0d7721578321c35b80bfa17c2413bfd1eac3458a",
+      "size": 7256
     }
   ]
 }

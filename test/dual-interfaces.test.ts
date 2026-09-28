@@ -210,7 +210,7 @@ describe('the DU bundles (bundles/<ID>/, deployments/bundles.json)', () => {
     expect(readme).toContain('`LICENSE`, `NOTICE`, `SOURCE.md` state the licences');
   });
 
-  it.each(IDS)('%s: LICENSE, NOTICE (every adapted origin, OpenZeppelin\'s MIT notice in full iff adapted) and SOURCE.md, listed like every file', (id) => {
+  it.each(IDS)('%s: LICENSE, NOTICE (every adapted origin — the private-form example included — and the MIT notice in full) and SOURCE.md, listed like every file', (id) => {
     const dir = dirOf(join(ROOT, 'bundles'), byId(id));
     const listed = hash.readIndexFile(dir).files.map((f) => f.path);
     for (const f of ['LICENSE', 'NOTICE', 'SOURCE.md']) expect(listed, f).toContain(f);
@@ -220,7 +220,11 @@ describe('the DU bundles (bundles/<ID>/, deployments/bundles.json)', () => {
     expect(notice).toContain('compact-off-chain-circuits\n    Copyright 2026 the compact-off-chain-circuits authors.');
     expect(notice).toContain('contracts/TokenMetadata.compact of https://github.com/acedward/mip-0018-midnight-contracts');
     const mit = readFileSync(join(ROOT, 'contracts', 'vendor', 'openzeppelin', 'LICENSE'), 'utf8').trimEnd().split('\n').map((l) => (l === '' ? '' : `    ${l}`)).join('\n');
-    expect(notice.includes(mit)).toBe((OZ_ADAPTED[id] ?? []).length > 0);
+    // audit 03-E1b, finding E1b-C1: every HIDDEN interface adapts the form and the explanatory header of
+    // [B]'s private-form example, which [B] licenses MIT, (c) 2025 Zeppelin Group Ltd — so EVERY DU
+    // bundle names it and carries the MIT notice, OpenZeppelin-based or not (UMETDU is not).
+    expect(notice.includes(mit)).toBe(true);
+    expect(notice).toContain('- compact-examples/fungible-private/Interface.compact of https://github.com/acedward/public-interfaces-for-compact-contracts\n  (1cf947786d55739ec4e89aef9258ebef0d8687fa), which that repository licenses under the MIT License,\n  Copyright (c) 2025 Zeppelin Group Ltd');
     for (const m of OZ_ADAPTED[id] ?? []) expect(notice).toContain(`${m}.compact`);
     const source = readFileSync(join(dir, 'SOURCE.md'), 'utf8');
     expect(source).toContain(`| \`src/${id}.Interface.compact\` | this repository, \`contracts/interfaces/${id}.Interface.compact\``);
@@ -229,6 +233,9 @@ describe('the DU bundles (bundles/<ID>/, deployments/bundles.json)', () => {
       expect(source, f).toContain(`| \`contracts/${f}\` |`);
       expect(source, f).toContain(sha256(readFileSync(join(ROOT, 'contracts', f))));
     }
+    expect(source).toContain('| `compact-examples/fungible-private/Interface.compact` (not vendored; its form and explanatory header) | [`acedward/public-interfaces-for-compact-contracts`](https://github.com/acedward/public-interfaces-for-compact-contracts) `compact-examples/fungible-private/Interface.compact` | `1cf947786d55739ec4e89aef9258ebef0d8687fa` | `187162e5a8bf23fd43c16591ca1a28d55e50570bcd5eacc2724f6215931e43f3` | MIT, Copyright (c) 2025 Zeppelin Group Ltd |');
+    expect(source).toContain('| Apache-2.0 AND MIT (the adapted MIT code: NOTICE) |');
+    expect(readFileSync(join(dir, 'src', `${id}.Interface.compact`), 'utf8').split('\n')[0]).toBe('// SPDX-License-Identifier: Apache-2.0 AND MIT');
     expect(TEMPLATE[id]).toBeDefined();
   });
 });

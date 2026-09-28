@@ -12,7 +12,14 @@ src/DAURDU.Interface.compact is a HIDDEN interface: it imports no module; its lo
 - contracts/TokenMetadata.compact of https://github.com/acedward/mip-0018-midnight-contracts (cb6c675ddbbb4a82d0bcaf87ad863c934becce31),
   Apache License, Version 2.0;
 - OpenZeppelin Compact Contracts v0.4.0-alpha.3 (https://github.com/OpenZeppelin/compact-contracts):
-  token/NativeShieldedToken.compact, token/NativeShieldedTokenCore.compact, utils/Utils.compact, under the MIT License:
+  token/NativeShieldedToken.compact, token/NativeShieldedTokenCore.compact, utils/Utils.compact, under the MIT License below.
+
+Its private form and its explanatory header ("WHAT IS HIDDEN, AND WHAT IS NOT") are adapted from
+- compact-examples/fungible-private/Interface.compact of https://github.com/acedward/public-interfaces-for-compact-contracts
+  (1cf947786d55739ec4e89aef9258ebef0d8687fa), which that repository licenses under the MIT License,
+  Copyright (c) 2025 Zeppelin Group Ltd (its NOTICE), below.
+
+The MIT License of the adapted code named above:
 
     MIT License
 

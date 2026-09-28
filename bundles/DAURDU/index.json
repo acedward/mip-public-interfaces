@@ -1,7 +1,7 @@
 {
   "bundle": "v1",
   "commitment": "ecmh-jubjub-grouphash",
-  "hash": "765647863cae34e19a14648cae65265b9b57a1489fa35fee3539288e6b3c541a",
+  "hash": "76549c0924492e34f74b9d88d1af46c056e275aab9b74121cecbcc5fbac5af81",
   "compiler": {
     "name": "compactc",
     "version": "0.34.0"
@@ -14,8 +14,8 @@
     },
     {
       "path": "NOTICE",
-      "sha256": "bcada72a4ae810c576e201e48cbc5e8f94a45e7190375eef141415c75a1cca7e",
-      "size": 2202
+      "sha256": "51d034fda6397c094bae72e5c9e964957c554cbc8308f3e06b6876614c02058c",
+      "size": 2642
     },
     {
       "path": "README.md",
@@ -24,8 +24,8 @@
     },
     {
       "path": "SOURCE.md",
-      "sha256": "84665203d9d16f453077a38a06225b3d5cb278cb307b2d70c740bf63f22d141e",
-      "size": 2814
+      "sha256": "82f987fd9e406673237b0e4aa551f84599f2ac9731c84196f30b257273d23747",
+      "size": 3256
     },
     {
       "path": "out/compiler/contract-info.json",
@@ -134,8 +134,8 @@
     },
     {
       "path": "src/DAURDU.Interface.compact",
-      "sha256": "03d180b924afba754c0b8e018c8a837a8abdb92e62b7d39aa010000b88f9a342",
-      "size": 11935
+      "sha256": "4d878ba92dd2bc9ea87ec3d7efa5ecafb70ee1ad114b74b12d1bf260be32cff8",
+      "size": 11967
     }
   ]
 }
