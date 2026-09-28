@@ -1,0 +1,323 @@
+// SPDX-License-Identifier: Apache-2.0 AND MIT
+//
+// GENERATED FILE — do not edit. Produced by scripts/generate-du-contracts.ts (scripts/du-interfaces.ts).
+//
+// The PUBLIC INTERFACE of DAURDU (Dual Aurora · DU), HIDDEN: the private form of the Public
+// Interfaces draft; form and header adapted from its MIT example compact-examples/fungible-private/Interface.compact.
+// The deployed contract is contracts/generated/DAURDU.compact.
+//
+// WHAT IS HIDDEN, AND WHAT IS NOT
+//
+// This file imports no module. It declares the deployed contract's ledger itself: 6
+// fields, in the deployed order and with the deployed types, named hidden1 to hidden6. A
+// verifier key depends on a circuit's logic and on the positions and types of the ledger
+// slots it touches, not on any name, so the circuits below compile to the keys the
+// contract deployed.
+//
+// Published: EVERY impure circuit of DAURDU (spec 00024 Q9), under its deployed entry point
+// name, with its code — 16 circuits: name, symbol, decimals, domainSep, tokenColor, mintShielded, mintUnshielded, publishUnshieldedName, publishUnshieldedSymbol, publishUnshieldedDecimals, publishUnshieldedRepository, publishShieldedName, publishShieldedSymbol, publishShieldedDecimals, publishShieldedRepository, publishBundle.
+// The module circuits they call are written out below as local circuits (each body as in
+// its module; only the ledger names differ). The emitting circuits (every MIP-0018
+// declaration and publishBundle) take the emitter secret, a witness: a consumer verifies
+// them at Levels 1-3 but cannot execute them.
+//
+// Hidden: the contract's source as written (its module structure and imports), its
+// constructor, the original ledger field names, and its pure circuit `kinds()` (a constant; it
+// has no verifier key, so it cannot be verified and is not published).
+//
+// Still visible, here or on chain: the ledger's shape (6 fields, their positions and
+// types) and its values, every entry point name, every verifier key, and the witnesses the
+// published circuits take (emitterSecret).
+//
+// Code adapted from: contracts/TokenMetadata.compact (the MIP-0018 module, Apache-2.0),
+// contracts/OffChainInterface.compact (the Public Interfaces module, Apache-2.0), and
+// OpenZeppelin Compact Contracts v0.4.0-alpha.3 (MIT, (c) Zeppelin Group Ltd):
+// token/NativeShieldedToken.compact, token/NativeShieldedTokenCore.compact, utils/Utils.compact — see the bundle's NOTICE and SOURCE.md.
+
+pragma language_version >= 0.26.0;
+
+import CompactStandardLibrary;
+
+export { ContractAddress, Either, Maybe, ShieldedCoinInfo, UserAddress, ZswapCoinPublicKey };
+
+// The deployed ledger, slot by slot. Not exported: nothing reads it by name.
+sealed ledger hidden1: Bytes<32>;
+sealed ledger hidden2: Bytes<32>;
+ledger hidden3: Boolean;
+sealed ledger hidden4: Opaque<"string">;
+sealed ledger hidden5: Opaque<"string">;
+sealed ledger hidden6: Uint<8>;
+
+witness emitterSecret(): Bytes<32>;
+
+// --- MIP-0018 (contracts/TokenMetadata.compact, Apache-2.0): the circuits the declarations call ---
+
+circuit tm_EVENT_NAME(): Bytes<32> {
+  return pad(32, "mip-0018:token-metadata[v1]");
+}
+
+circuit tm_ONE_PART_VALUE_SIZE(): Uint<16> {
+  return 188;
+}
+
+pure circuit tm_emitterSecretHashOf(secret: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "mip-0018:emitter:"), secret]);
+}
+
+/** Every emitting circuit calls this first: the caller must know the emitter secret (spec 00024 Q12). */
+circuit tm_assertEmitter(): [] {
+  assert(tm_emitterSecretHashOf(emitterSecret()) == hidden1,
+         "TokenMetadata: caller is not the emitter");
+}
+
+circuit tm_emitHead(
+  domainSep: Bytes<32>,
+  kind: Uint<8>,
+  key: Bytes<32>,
+  valType: Uint<8>,
+  valLen: Uint<16>,
+  valueHead: Bytes<188>
+): [] {
+  emit(Misc {
+    name: tm_EVENT_NAME(),
+    payload: Bytes[...domainSep, kind, ...key, valType, ...(valLen as Bytes<2>), ...valueHead]
+  });
+}
+
+circuit tm_emitTokenMetadata(
+  domainSep: Bytes<32>,
+  kind: Uint<8>,
+  key: Bytes<32>,
+  valType: Uint<8>,
+  valLen: Uint<16>,
+  value: Bytes<188>
+): [] {
+  assert(valLen <= tm_ONE_PART_VALUE_SIZE(),
+         "TokenMetadata: a one-part value holds at most 188 bytes");
+  tm_emitHead(domainSep, kind, key, valType, valLen, value);
+}
+
+// --- Public Interfaces (contracts/OffChainInterface.compact, Apache-2.0) ---
+
+circuit oci_publishBundle(payload: Bytes<256>): [] {
+  emit(Misc { name: pad(32, "mip-xxxx:public-interface[v1]"), payload: disclose(payload) });
+}
+
+// --- OpenZeppelin Compact Contracts v0.4.0-alpha.3 (MIT, (c) Zeppelin Group Ltd):
+// token/NativeShieldedTokenCore, token/NativeShieldedToken, utils/Utils — the circuits the
+// published token circuits call ---
+
+pure circuit oz_utils_isContractAddress(
+  keyOrAddress: Either<ZswapCoinPublicKey, ContractAddress>
+): Boolean {
+  return !keyOrAddress.is_left;
+}
+
+pure circuit oz_utils_isKeyOrAddressZero(
+  keyOrAddress: Either<ZswapCoinPublicKey, ContractAddress>
+): Boolean {
+  return oz_utils_isContractAddress(keyOrAddress)
+           ? default<ContractAddress> == keyOrAddress.right
+           : default<ZswapCoinPublicKey> == keyOrAddress.left;
+}
+
+circuit oz_core_assertInitialized(): [] {
+  assert(hidden3, "NativeShieldedToken: contract not initialized");
+}
+
+circuit oz_core_name(): Opaque<"string"> {
+  oz_core_assertInitialized();
+  return hidden4;
+}
+
+circuit oz_core_symbol(): Opaque<"string"> {
+  oz_core_assertInitialized();
+  return hidden5;
+}
+
+circuit oz_core_decimals(): Uint<8> {
+  oz_core_assertInitialized();
+  return hidden6;
+}
+
+circuit oz_core_tokenColor(domain: Bytes<32>): Bytes<32> {
+  oz_core_assertInitialized();
+  return tokenType(disclose(domain), kernel.self());
+}
+
+circuit oz_core__mint(
+  domain: Bytes<32>,
+  recipient: Either<ZswapCoinPublicKey, ContractAddress>,
+  amount: Uint<64>,
+  nonce: Bytes<32>
+): ShieldedCoinInfo {
+  oz_core_assertInitialized();
+  const self = kernel.self();
+  assert(!oz_utils_isKeyOrAddressZero(recipient), "NativeShieldedToken: invalid recipient");
+  assert(recipient.is_left || recipient.right == self, "NativeShieldedToken: recipient contract must be self");
+  const coin = mintShieldedToken(disclose(domain), disclose(amount), disclose(nonce), disclose(recipient));
+  if (disclose(!recipient.is_left)) {
+    receiveShielded(coin);
+  }
+  return coin;
+}
+
+circuit oz_nst_name(): Opaque<"string"> {
+  return oz_core_name();
+}
+
+circuit oz_nst_symbol(): Opaque<"string"> {
+  return oz_core_symbol();
+}
+
+circuit oz_nst_decimals(): Uint<8> {
+  return oz_core_decimals();
+}
+
+circuit oz_nst_tokenColor(): Bytes<32> {
+  return oz_core_tokenColor(hidden2);
+}
+
+circuit oz_nst__mint(
+  recipient: ZswapCoinPublicKey,
+  amount: Uint<64>,
+  nonce: Bytes<32>
+): ShieldedCoinInfo {
+  return oz_core__mint(
+    hidden2,
+    left<ZswapCoinPublicKey, ContractAddress>(recipient),
+    amount,
+    nonce
+  );
+}
+
+// --- the published token circuits ---
+
+export circuit name(): Opaque<"string"> {
+  return oz_nst_name();
+}
+
+export circuit symbol(): Opaque<"string"> {
+  return oz_nst_symbol();
+}
+
+export circuit decimals(): Uint<8> {
+  return oz_nst_decimals();
+}
+
+/** The domain separator this contract mints and describes under. */
+export circuit domainSep(): Bytes<32> {
+  return hidden2;
+}
+
+/** The token's colour: `tokenType(domainSep, this contract)`. */
+export circuit tokenColor(): Bytes<32> {
+  return oz_nst_tokenColor();
+}
+
+/** Mints the shielded half (kind byte 1) to `recipient`, a Zswap coin public key. */
+export circuit mintShielded(recipient: ZswapCoinPublicKey, amount: Uint<64>, nonce: Bytes<32>): ShieldedCoinInfo {
+  return oz_nst__mint(disclose(recipient), disclose(amount), disclose(nonce));
+}
+
+/** Mints the unshielded half (kind byte 0), same domain separator, same colour, as an unshielded UTxO. */
+export circuit mintUnshielded(recipient: Either<ContractAddress, UserAddress>, amount: Uint<64>): Bytes<32> {
+  assert(amount > 0, "amount must be positive");
+  return mintUnshieldedToken(hidden2, disclose(amount), disclose(recipient));
+}
+
+// --- the published MIP-0018 declarations (each ONE package; every byte a literal) ---
+
+/**
+ * @description MIP-0018 (publishUnshielded): ONE declaration, one TokenMetadata event, every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit publishUnshieldedName(): [] {
+  tm_assertEmitter();
+  // name = "Dual Aurora · DU" (val-type 1 string, val-len 17)
+  tm_emitTokenMetadata(pad(32, "umbra:daurdu"), 0, pad(32, "name"), 1, 17, Bytes[
+    0x44, 0x75, 0x61, 0x6c, 0x20, 0x41, 0x75, 0x72, 0x6f, 0x72, 0x61, 0x20,
+    0xc2, 0xb7, 0x20, 0x44, 0x55, ...pad(171, "")
+  ]);
+}
+
+/**
+ * @description MIP-0018 (publishUnshielded): ONE declaration, one TokenMetadata event, every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit publishUnshieldedSymbol(): [] {
+  tm_assertEmitter();
+  // symbol = "DAURDU" (val-type 1 string, val-len 6)
+  tm_emitTokenMetadata(pad(32, "umbra:daurdu"), 0, pad(32, "symbol"), 1, 6, pad(188, "DAURDU"));
+}
+
+/**
+ * @description MIP-0018 (publishUnshielded): ONE declaration, one TokenMetadata event, every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit publishUnshieldedDecimals(): [] {
+  tm_assertEmitter();
+  // decimals = "6" (val-type 2 integer, val-len 16)
+  tm_emitTokenMetadata(pad(32, "umbra:daurdu"), 0, pad(32, "decimals"), 2, 16, Bytes[0x06, ...pad(187, "")]);
+}
+
+/**
+ * @description MIP-0018 (publishRepository): ONE declaration, one TokenMetadata event, every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit publishUnshieldedRepository(): [] {
+  tm_assertEmitter();
+  // repository = "https://github.com/acedward/mip-public-interfaces/blob/main/contracts/generated/DAURDU.compact" (val-type 4 URI, val-len 94)
+  tm_emitTokenMetadata(pad(32, "umbra:daurdu"), 0, pad(32, "repository"), 4, 94, pad(188, "https://github.com/acedward/mip-public-interfaces/blob/main/contracts/generated/DAURDU.compact"));
+}
+
+/**
+ * @description MIP-0018 (publishShielded): ONE declaration, one TokenMetadata event, every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit publishShieldedName(): [] {
+  tm_assertEmitter();
+  // name = "Dual Aurora · DU" (val-type 1 string, val-len 17)
+  tm_emitTokenMetadata(pad(32, "umbra:daurdu"), 1, pad(32, "name"), 1, 17, Bytes[
+    0x44, 0x75, 0x61, 0x6c, 0x20, 0x41, 0x75, 0x72, 0x6f, 0x72, 0x61, 0x20,
+    0xc2, 0xb7, 0x20, 0x44, 0x55, ...pad(171, "")
+  ]);
+}
+
+/**
+ * @description MIP-0018 (publishShielded): ONE declaration, one TokenMetadata event, every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit publishShieldedSymbol(): [] {
+  tm_assertEmitter();
+  // symbol = "DAURDU" (val-type 1 string, val-len 6)
+  tm_emitTokenMetadata(pad(32, "umbra:daurdu"), 1, pad(32, "symbol"), 1, 6, pad(188, "DAURDU"));
+}
+
+/**
+ * @description MIP-0018 (publishShielded): ONE declaration, one TokenMetadata event, every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit publishShieldedDecimals(): [] {
+  tm_assertEmitter();
+  // decimals = "6" (val-type 2 integer, val-len 16)
+  tm_emitTokenMetadata(pad(32, "umbra:daurdu"), 1, pad(32, "decimals"), 2, 16, Bytes[0x06, ...pad(187, "")]);
+}
+
+/**
+ * @description MIP-0018 (publishRepository): ONE declaration, one TokenMetadata event, every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit publishShieldedRepository(): [] {
+  tm_assertEmitter();
+  // repository = "https://github.com/acedward/mip-public-interfaces/blob/main/contracts/generated/DAURDU.compact" (val-type 4 URI, val-len 94)
+  tm_emitTokenMetadata(pad(32, "umbra:daurdu"), 1, pad(32, "repository"), 4, 94, pad(188, "https://github.com/acedward/mip-public-interfaces/blob/main/contracts/generated/DAURDU.compact"));
+}
+
+// --- the published Public Interfaces circuit ---
+
+/** Emits ONE 256-byte part of this contract's interface pointer (`mip-xxxx:public-interface[v1]`). Emitter only. */
+export circuit publishBundle(payload: Bytes<256>): [] {
+  tm_assertEmitter();
+  oci_publishBundle(payload);
+}

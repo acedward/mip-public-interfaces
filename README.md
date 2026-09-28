@@ -26,7 +26,7 @@ v0.4.0-alpha.3 wherever it has a module.
 Everything here is **in development** and is exercised on a local Midnight 2.x chain;
 nothing is deployed to a public network yet.
 
-Status: **in development** (branch `feat/00024-02-public-interface`).
+Status: **in development** (branches `feat/00024-02-public-interface`, `feat/00024-03-dual`).
 
 ## Layout
 
@@ -35,10 +35,13 @@ contracts/TokenMetadata.compact      MIP-0018 module (UC-1 layout, emitter secre
 contracts/OffChainInterface.compact  [B]'s publishBundle module — vendored, see contracts/SOURCE.md
 contracts/vendor/openzeppelin/       OpenZeppelin Compact Contracts v0.4.0-alpha.3 modules — vendored (a bundle
                                      cannot carry a node_modules path), see its SOURCE.md
-contracts/generated/                 the PI set: LSUNPI, SSTARPI, CNSTPI, UPROMPI — GENERATED, do not edit
+contracts/generated/                 the PI set (LSUNPI, SSTARPI, CNSTPI, UPROMPI) and the DU set (SNEBDU,
+                                     LMOONDU, UMETDU, DAURDU) — GENERATED, do not edit
+contracts/interfaces/                the DU set's HIDDEN public interfaces (<ID>.Interface.compact, the private form) —
+                                     GENERATED, do not edit
 contracts/probe/                     PublicInterfaceProbe: publishBundle behind the emitter secret (a test harness)
 contracts/managed/                   compiler output (generated JS/TS, ZKIR, metadata, verifier keys; no proving keys)
-bundles/                             the PI contracts' public-interface bundles, as the local stack serves them —
+bundles/                             the PI (FULL) and DU (HIDDEN) contracts' public-interface bundles, as the local stack serves them —
                                      each with LICENSE, NOTICE and SOURCE.md (the licences and provenance of the
                                      files it copies), listed in its index.json like every other file
 tools/public-interface/              public-interface-deploy-check / public-interface-verify: a patched copy of
@@ -86,6 +89,65 @@ tools split, discover and verify such pointers (`tools/public-interface/SOURCE.m
 which `test/uprompi-multipart.test.ts` publishes in one guaranteed intent against an
 in-process ledger and reads back (the reader, the patched tool from real `raw` bytes, and
 Levels 1-2 against the ledger's state of the contract).
+
+## The DU set (spec 00024 §6.B)
+
+| Contract | MIP-18 twin | Base | MIP-0018 metadata (the twin's, step for step) |
+|---|---|---|---|
+| `SNEBDU` | `SNEB18` | OpenZeppelin `NativeShieldedToken` (kind 1) | name, symbol, decimals, `repository`, a 677-byte `metadata` JSON value in **3 parts**, `/metadata/description`; two mints |
+| `LMOONDU` | `LMOON18` | OpenZeppelin `FungibleToken` (a ledger token, kind 2) | name, symbol, decimals, `repository`, a mint, a rename, `description`, a **Null** that clears it, a 377-byte `description` in **2 parts** |
+| `UMETDU` | `UMET18` | own native unshielded template (kind 0) | three mints first, then name, symbol, decimals, `repository` |
+| `DAURDU` | `DAUR18` | OpenZeppelin `NativeShieldedToken` (shielded half) + own code (unshielded half) | name, symbol, decimals, `repository` for kind 0, then for kind 1 (one domain, one colour); one mint of each kind |
+
+Every DU contract is **dual**: its twin's MIP-0018 declarations (one declaration per circuit
+call — one intent, one package — every byte a compile-time literal; a value longer than 188
+bytes is ONE call emitting all of its parts) **and** a public interface published with
+`publishBundle`; one emitter secret gates every emitting circuit. Its interface is HIDDEN
+(the Public Interfaces draft's private form: `contracts/interfaces/<ID>.Interface.compact`
+declares the contract's ledger slot by slot under hidden names, imports no module, and
+publishes the code of every impure circuit). Each DU contract also exports one pure
+constant getter (`kind()`, DAURDU `kinds()`), which the interface does not publish: a pure
+circuit has no verifier key on chain.
+
+```sh
+node --import tsx scripts/generate-du-contracts.ts   # contracts/generated/*DU.compact + deployments/dual-matrix.json
+./scripts/compile.sh generated/SNEBDU                # compactc 0.34.0 with keys (the k=18 parameters: MIDNIGHT_PP)
+./scripts/compile.sh interfaces/SNEBDU.Interface     # its HIDDEN interface, on its own
+node --import tsx scripts/bundle.ts                  # every bundle: deploy-check refuses a DU bundle unless every
+                                                     # published key equals the deployed contract's
+./scripts/verify-bundles.sh SNEBDU                   # Levels 1-3 offline
+```
+
+The HIDDEN interfaces reproduce every deployed key: each module circuit a published circuit
+calls (the MIP-0018 module, the Public Interfaces module, OpenZeppelin's `NativeShieldedToken`,
+`FungibleToken` and `Utils`) is written out in the interface as a local circuit with its module
+body, so the published circuits compile to the same ZKIR — hence the same verifier keys — as the
+deployed contract's. A DU bundle ships only `src/<ID>.Interface.compact` (no module file, not
+the contract), one verifier key per published circuit, and LICENSE / NOTICE / SOURCE.md naming
+every origin of the adapted code.
+
+**P4 — two packages of two names in one intent.** `scripts/dual-intent.ts` builds ONE
+transaction whose ONE guaranteed intent holds UMETDU's `publishRepository` declaration (a
+`mip-0018:token-metadata[v1]` package) and its `publishBundle` pointer (a
+`mip-xxxx:public-interface[v1]` package): equal transaction, address and segment, distinct names —
+a reader that groups by name reads two packages, each for its own protocol.
+`test/p4-dual-intent.test.ts` applies it to an in-process ledger and reads it back with the
+Multi-Part Event reader; `scripts/publish-dual-intent.ts` publishes it on a chain.
+
+**P2 — a second valid bundle.** `bundles/LMOONDU-v2/` is LMOONDU's interface again (same source,
+same keys) at another location with one more listed file, `PUBLICATION.md` — so another
+commitment — for publishing two valid publications of one contract in the same block:
+`scripts/publish-same-block.ts` proves and balances both (two wallets, so the fees do not compete
+for one DUST output) before submitting either, submits them together right after a block
+boundary and reads each one's block and position from the indexer; `test/p2-same-block.test.ts`
+applies such a pair in one block of an in-process ledger (both valid against one pinned state)
+and checks the order rule — the later by observed position, never by submission order.
+
+**On chain** (a local Midnight 2.x chain): `scripts/deploy-and-publish.ts SNEBDU LMOONDU UMETDU
+DAURDU` deploys and runs the DU plans (LMOONDU and DAURDU in stages: 12 keys with the deploy, 4
+`VerifierKeyInsert`s — `test/du-deploy-plan.test.ts` measures every deploy offline), then
+`scripts/publish-dual-intent.ts` (P4) and `scripts/stranger-check.ts` (every emitting circuit
+refused without the secret).
 
 ## Toolchain
 

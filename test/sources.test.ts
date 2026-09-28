@@ -5,7 +5,7 @@
 // (vendor/compact-multi-part-event/SOURCE.md). A copy that drifts from its pinned
 // SHA-256 fails here.
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -125,6 +125,22 @@ describe('the reference set (deployments/reference-set.json, a pinned copy — d
   });
 });
 
+describe('the MIP-18 twins\' plan (deployments/mip18-generated-matrix.json, a pinned copy — deployments/SOURCE.md)', () => {
+  it('is byte-identical to acedward/mip-0018-midnight-contracts @ cb6c675 deployments/generated-matrix.json', () => {
+    expect(sha256(readFileSync(join(ROOT, 'deployments', 'mip18-generated-matrix.json')))).toBe(
+      '5da77454807c18ce9f836ceb11e69cd27d0e044094b4b8c298e1ea5b23d47ff0',
+    );
+  });
+
+  it('deployments/SOURCE.md records that pin (upstream, commit, blob, SHA-256)', () => {
+    const row = readFileSync(join(ROOT, 'deployments', 'SOURCE.md'), 'utf8').split('\n').find((l) => l.startsWith('| `mip18-generated-matrix.json` |'));
+    expect(row).toBeDefined();
+    for (const pin of ['acedward/mip-0018-midnight-contracts', 'cb6c675ddbbb4a82d0bcaf87ad863c934becce31', '3000ae229bae3285c70ea8f58d6fd5d568aeb986', '5da77454807c18ce9f836ceb11e69cd27d0e044094b4b8c298e1ea5b23d47ff0']) {
+      expect(row).toContain(pin);
+    }
+  });
+});
+
 describe('copied scripts (scripts/SOURCE.md)', () => {
   it('records every script adapted from acedward/mip-0018-midnight-contracts @ cb6c675, with its upstream blob and SHA-256', () => {
     const rows = readFileSync(join(ROOT, 'scripts', 'SOURCE.md'), 'utf8').split('\n').filter((l) => /^\| `[^`]+` \| `scripts\//.test(l));
@@ -133,6 +149,50 @@ describe('copied scripts (scripts/SOURCE.md)', () => {
     const compile = rows.find((l) => l.startsWith('| `compile.sh` |'))!;
     expect(compile).toContain('ef5bb6a83992b1cd5d2bafffa560637f96c06abc');
     expect(compile).toContain('62caa8cf29abcb213d8b00cd53a0deb0ce0cfd05049564d6a964663c934e0ad2');
+  });
+});
+
+/** The rows of one `## ` section of scripts/SOURCE.md (the first table when `heading` is null). */
+const scriptsSourceSection = (heading: string | null): string => {
+  const text = readFileSync(join(ROOT, 'scripts', 'SOURCE.md'), 'utf8');
+  if (heading === null) return text.split('\n## ')[0]!;
+  const start = text.indexOf(`\n## ${heading}\n`);
+  if (start < 0) throw new Error(`scripts/SOURCE.md has no section "${heading}"`);
+  const rest = text.slice(start + 1);
+  const next = rest.indexOf('\n## ', 1);
+  return next < 0 ? rest : rest.slice(0, next);
+};
+const firstCells = (section: string): string[] =>
+  section.split('\n').filter((l) => /^\| `[^`]+` \|/.test(l)).map((l) => /^\| `([^`]+)`/.exec(l)![1]!);
+
+describe('scripts/SOURCE.md covers every script (audit 03-E1b, finding E1b-C2)', () => {
+  it('every file under scripts/ is in the first table, the adapted-code table or the list of own scripts — none unaccounted for', () => {
+    const recorded = new Set([
+      ...firstCells(scriptsSourceSection(null)),
+      ...firstCells(scriptsSourceSection('Adapted from other upstream repositories')),
+      ...[...scriptsSourceSection("This repository's own scripts").matchAll(/`([^`/]+\.(?:ts|sh|md))`/g)].map((m) => m[1]!),
+    ]);
+    const files = readdirSync(join(ROOT, 'scripts')).sort();
+    expect(files.filter((f) => !recorded.has(f))).toEqual([]);
+  });
+
+  it('the P4 builder records the Multi-Part Event publisher code it adapts (guard.ts, compose.ts), with the vendored files\' SHA-256', () => {
+    const rows = scriptsSourceSection('Adapted from other upstream repositories').split('\n').filter((l) => l.startsWith('| `dual-intent.ts` |'));
+    for (const file of ['guard.ts', 'compose.ts']) {
+      const row = rows.find((l) => l.includes(`\`src/publisher/${file}\``));
+      expect(row, file).toBeDefined();
+      expect(row).toContain('f2425f2722615c167b7b94814d6f3f282375479e');
+      expect(row).toContain(sha256(readFileSync(join(VENDOR_Y, 'src', 'publisher', file))));
+    }
+    expect(scriptsSourceSection(null)).not.toMatch(/^\| `dual-intent\.ts` \| new \|/m);
+  });
+
+  it('the HIDDEN-interface writer records every module it adapts with the pinned copies\' SHA-256, and the private-form example', () => {
+    const rows = scriptsSourceSection('Adapted from other upstream repositories').split('\n').filter((l) => l.startsWith('| `du-interfaces.ts` |')).join('\n');
+    for (const file of ['TokenMetadata.compact', 'OffChainInterface.compact', 'vendor/openzeppelin/token/NativeShieldedTokenCore.compact', 'vendor/openzeppelin/token/NativeShieldedToken.compact', 'vendor/openzeppelin/token/FungibleToken.compact', 'vendor/openzeppelin/utils/Utils.compact']) {
+      expect(rows, file).toContain(sha256(readFileSync(join(CONTRACTS, file))));
+    }
+    expect(rows).toContain('`compact-examples/fungible-private/Interface.compact` (`1314ddea86f5bc22e6b9e4405fc487d2544b88e9`) | `187162e5a8bf23fd43c16591ca1a28d55e50570bcd5eacc2724f6215931e43f3` | MIT');
   });
 });
 

@@ -1,7 +1,9 @@
 /**
- * Deploy the PI set (deployments/generated-matrix.json: LSUNPI, SSTARPI, CNSTPI, UPROMPI) on a
- * local chain and run each row's plan in order: ONE circuit call per transaction for the
- * `repository` declarations (each its own intent and package, UC-1), the mints and the
+ * Deploy the PI set (deployments/generated-matrix.json: LSUNPI, SSTARPI, CNSTPI, UPROMPI) and/or
+ * the DU set (deployments/dual-matrix.json: SNEBDU, LMOONDU, UMETDU, DAURDU — project 00024-03)
+ * on a local chain and run each row's plan in order: ONE circuit call per transaction for every
+ * MIP-0018 declaration (each its own intent and package, UC-1 — a DU declaration of a long
+ * value is ONE call emitting all of its parts), the mints (ledger, shielded, unshielded) and the
  * transfer, then the public-interface pointer of deployments/bundles.json — published with the
  * Multi-Part Event reference publisher, every `publishBundle(part)` call of the pointer in ONE
  * guaranteed intent (UPROMPI's 235-byte URL is a 2-part package; spec FR-019).
@@ -13,7 +15,8 @@
  *   MN_DEPLOYMENT_FILE=out/local-deployment.json \
  *     node --import tsx scripts/deploy-and-publish.ts [LSUNPI SSTARPI …]
  *
- * With no arguments every row of the matrix is run, in file order (`ROWS=a,b` works too).
+ * With no arguments every row of both plans is run, in file order — the PI set, then the DU
+ * set (`ROWS=a,b` works too; e.g. `SNEBDU LMOONDU UMETDU DAURDU` for the DU set alone).
  *
  * Secrets (spec 00024 Q12): the constructor stores `emitterSecretHashOf(secret)`; every
  * emitting circuit (`publish*Repository`, `publishBundle`) proves knowledge of the secret
@@ -22,8 +25,8 @@
  * only the proof server as private inputs — run your own.
  *
  * A contract whose deploy does not fit the block budget is deployed in stages (spec 00024
- * Q20 (a), scripts/staged-deploy.ts). The four PI contracts have 8-11 circuits and are
- * expected to fit; the path is kept from the source repository.
+ * Q20 (a), scripts/staged-deploy.ts). The four PI contracts have 8-11 circuits and fit; the DU
+ * set's 12-16 keys may not (test/du-deploy-plan.test.ts estimates each deploy offline).
  *
  * Resumable per row and per step through the record (`MN_DEPLOYMENT_FILE`, default
  * `out/deployment.json`, not committed); a failed step stops its row and the next row runs.
@@ -46,8 +49,9 @@ import {
 import {
   deployOrFind,
   openRecord,
+  readAllRows,
   readBundles,
-  readMatrix,
+  stepArgs,
   type CallableContract,
   type ContractProviders,
   type MatrixRow,
@@ -61,7 +65,6 @@ import {
   enterPrivateStateDirectory,
   fungibleSecret,
   hexOf,
-  holderBytes,
   networkProfile,
   pad,
   REPOSITORY_ROOT,
@@ -70,7 +73,7 @@ import {
 
 const OUT_FILE = path.resolve(process.env.MN_DEPLOYMENT_FILE?.trim() || path.join(REPOSITORY_ROOT, 'out', 'deployment.json'));
 
-const matrix = readMatrix();
+const allRows = readAllRows();
 const bundles = readBundles();
 const requested = (process.argv.slice(2).length > 0
   ? process.argv.slice(2)
@@ -78,13 +81,11 @@ const requested = (process.argv.slice(2).length > 0
 ).map((s) => s.toUpperCase());
 const rows: MatrixRow[] = requested.length > 0
   ? requested.map((id) => {
-      const row = matrix.rows.find((r) => r.id === id);
+      const row = allRows.find((r) => r.id === id);
       if (!row) throw new Error(`unknown row "${id}"`);
       return row;
     })
-  : matrix.rows;
-
-const either = (left: Uint8Array) => ({ is_left: true, left, right: { bytes: new Uint8Array(32) } });
+  : allRows;
 
 const BYTES32 = new CompactTypeBytes(32);
 const VECTOR2 = new CompactTypeVector(2, BYTES32);
@@ -120,7 +121,7 @@ async function main(): Promise<void> {
         throw new Error(`${row.id} was deployed with another emitter secret; use its secret or a new record`);
       }
       record.emitterSecretHash = hexOf(secretHash);
-      if (row.id === 'LSUNPI') record.fungibleAccount = hexOf(accountIdOf(fungibleSk));
+      if (row.template === 'FungibleToken') record.fungibleAccount = hexOf(accountIdOf(fungibleSk));
       const module = await contractModuleOf(row.contract);
       const compiled = compiledContractOf(row.id, row.contract, module);
       const providers = providersOf(walletProvider, environment, `umbra-00024-02-${row.id.toLowerCase()}`, row.contract);
@@ -175,34 +176,7 @@ async function main(): Promise<void> {
             log('step.done', { row: row.id, index, circuit: step.circuit, txHash: publication.txHash, blockHeight: publication.blockHeight, parts: publication.parts, segment: publication.segment, ms: Date.now() - started });
             continue;
           }
-          let args: unknown[] = [];
-          let recipient: string | undefined;
-          if (step.kind === 'mint') {
-            if (step.token === 'ledger') {
-              const to = step.to === 'owner' ? accountIdOf(fungibleSk) : holderBytes(step.to ?? '');
-              recipient = hexOf(to);
-              args = [either(to), BigInt(step.amount ?? '0')];
-            } else if (step.token === 'shielded') {
-              // A Zswap output is encrypted to its recipient: midnight-js must resolve the
-              // recipient's encryption key, so a shielded mint goes to the deployer (as in the
-              // source repository), not to the plan's stand-in holder.
-              recipient = 'deployer';
-              const nonce = pad(32, step.nonce ?? `${row.id}:${index}`);
-              if (step.circuit === 'mintPiece') {
-                const domainSep = row.pieces?.find((p) => p.piece === step.piece)?.domainSepHex;
-                if (!domainSep) throw new Error(`${row.id}: unknown piece ${step.piece}`);
-                args = [bytesOfHex(domainSep), zswapRecipient, nonce];
-              } else {
-                args = [zswapRecipient, BigInt(step.amount ?? '0'), nonce];
-              }
-            } else {
-              throw new Error(`${row.id}: an unshielded mint step is not in the plan`);
-            }
-          } else if (step.kind === 'transfer') {
-            const to = holderBytes(step.to ?? '');
-            recipient = hexOf(to);
-            args = [either(to), BigInt(step.amount ?? '0')];
-          }
+          const { args, recipient } = stepArgs(row, step, index, { fungibleSk, zswapRecipient });
           const result = await contract.callTx[step.circuit]!(...args);
           const p = result.public;
           record.steps = record.steps.filter((s) => s.index !== index);

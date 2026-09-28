@@ -57,6 +57,25 @@ export class LocalChain {
     return result;
   }
 
+  /**
+   * Verify and apply several transactions in ONE block, in the given order (their positions in
+   * that block) — sub-plan 03-C's P2 case: two publications of one contract in the same block.
+   */
+  applyBlock(txs: readonly AnyTransaction[]): ledger.TransactionResult[] {
+    const context = this.blockContext();
+    const results = txs.map((tx) => {
+      const verified = tx.wellFormed(this.state, strictness(), this.time);
+      const [next, result] = this.state.apply(verified, new ledger.TransactionContext(this.state, context));
+      this.state = next;
+      return result;
+    });
+    this.time = new Date(this.time.getTime() + 6000);
+    this.state = this.state.postBlockUpdate(this.time);
+    this.height += 1;
+    this.parentBlockHash = this.height.toString(16).padStart(64, '0');
+    return results;
+  }
+
   /** The public data the Multi-Part Event publisher reads: the latest block, then states at it. */
   source(): PublicationStateSource {
     return {

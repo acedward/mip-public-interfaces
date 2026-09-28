@@ -1,0 +1,146 @@
+{
+  "bundle": "v1",
+  "commitment": "ecmh-jubjub-grouphash",
+  "hash": "1c3db0d5796904ccc0983aa4970958e439fc7aa845168acdb354e810b90f4760",
+  "compiler": {
+    "name": "compactc",
+    "version": "0.34.0"
+  },
+  "files": [
+    {
+      "path": "LICENSE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "size": 11358
+    },
+    {
+      "path": "NOTICE",
+      "sha256": "fa45e1a2d9949f38c970a287cf138eed46cb006ebb10676cd39ed2a3318b261c",
+      "size": 2599
+    },
+    {
+      "path": "PUBLICATION.md",
+      "sha256": "d077b20b37201639c9f2ee58eb8c0d0dda4671925b9b7e6fa781a8253d4a377e",
+      "size": 701
+    },
+    {
+      "path": "README.md",
+      "sha256": "8e5d03d10038ffc01a65ac91b90caf0f08f3260eef6bb139df2861d69d85a141",
+      "size": 3438
+    },
+    {
+      "path": "SOURCE.md",
+      "sha256": "7ab13b7fdf90d4d51f8c4972c80094f12e78fe70f3ebe1ff522d1bec50ce1773",
+      "size": 8014
+    },
+    {
+      "path": "out/compiler/contract-info.json",
+      "sha256": "55771e3cde024a841ad26b40baa18c3b55ac87d1962d69ce1f446cc5a17a090e",
+      "size": 11315
+    },
+    {
+      "path": "out/contract/index.d.ts",
+      "sha256": "7e96364ff81df3087995ec26f114955f845ed9e6ac6a6ee72918c0084b06f18e",
+      "size": 7538
+    },
+    {
+      "path": "out/contract/index.js",
+      "sha256": "f293289695392dd57c3e7d9bdc4e84a795ea58d91c5058513c6c9bbc1cecfb6b",
+      "size": 112982
+    },
+    {
+      "path": "out/contract/package.json",
+      "sha256": "5a065fe7d8eab2a582f428e11c2ea63aaf70607a54f69cfd5c711b5c53d91b32",
+      "size": 21
+    },
+    {
+      "path": "out/keys/balanceOf.verifier",
+      "sha256": "0e4d8f5fb639a8fc7a2f9e0fa3f2d403f64f4eedd22cb65671d84191e474bbfa",
+      "size": 1351
+    },
+    {
+      "path": "out/keys/clearDescription.verifier",
+      "sha256": "1a34a80cc820113912bd1d582365a87f700a4955ad3049c79301790c34837c32",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/decimals.verifier",
+      "sha256": "bb82dadf1b29b089eb223c64b37e46347087daa528544cdf4bdf6166515ea347",
+      "size": 1351
+    },
+    {
+      "path": "out/keys/mint.verifier",
+      "sha256": "06efb8d9096889d2b9171e09303e4b0713b26fe9d05d4d073c1adb2653017002",
+      "size": 1351
+    },
+    {
+      "path": "out/keys/name.verifier",
+      "sha256": "ab8188a3407b3cc482d7eb0e698e22df009e1045e1cfa6498e2e08dbd9311d19",
+      "size": 1351
+    },
+    {
+      "path": "out/keys/publishBundle.verifier",
+      "sha256": "22be3a18f3e19012658b1f44adfdc814ceba9223f48f88afeb2ffac7f52aac81",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/publishDecimals.verifier",
+      "sha256": "bca3b83e6309d15451e0125dee279f8cdba0b0b8260ffd5ea299788d6213270a",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/publishDescription.verifier",
+      "sha256": "070848c5158bb992f8d46e6dd16c40bd2d4233d9b6425dd9ea17643d9e407f3b",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/publishDescription2.verifier",
+      "sha256": "072614aa956d32d4fed9ab6b24044b1fa3c0b3c35f876f7c87332a0004450262",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/publishName.verifier",
+      "sha256": "43315a86be606acd9006a0c51cec2fcee557a8a2d75252eebe3d440159c65fce",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/publishName2.verifier",
+      "sha256": "bdbfa25d77840124f5b39656de5c178c16d99baeb5243db6dbe7a7cecf00bbf3",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/publishRepository.verifier",
+      "sha256": "13e3f553a02456e132d27f135578a1e9de942257e1273f24aef2ea6ed3122169",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/publishSymbol.verifier",
+      "sha256": "07e67dd310e6cb15e1da5d69b3eac687429d3e44b56e7d404587b2033f38fc54",
+      "size": 2119
+    },
+    {
+      "path": "out/keys/symbol.verifier",
+      "sha256": "c3dd112811c2ea60b8c4660a5b98a3701f47c51012ed0f410bfb3aec5680a83b",
+      "size": 1351
+    },
+    {
+      "path": "out/keys/totalSupply.verifier",
+      "sha256": "3acc705607d262f7fdc744f80b04bef102ed50309a05fe1bee1a5bae6b72f4bf",
+      "size": 1351
+    },
+    {
+      "path": "out/keys/transfer.verifier",
+      "sha256": "d8b6db2598ec79d7792947e163d841d213d405e87deefd23ed931219fea5678a",
+      "size": 2119
+    },
+    {
+      "path": "package.json",
+      "sha256": "5fc33a718b143fb0b247fe39214f22922de80c4079c49bd05e2810e7d8ba3627",
+      "size": 321
+    },
+    {
+      "path": "src/LMOONDU.Interface.compact",
+      "sha256": "d6519000d2767fb1d6724b2bd450afb73b4e239ab45853850d19bc7c06bed58a",
+      "size": 14509
+    }
+  ]
+}

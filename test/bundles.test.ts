@@ -76,8 +76,9 @@ beforeAll(async () => {
 afterAll(() => rmSync(rebuilt, { recursive: true, force: true }));
 
 describe('bundles/ and deployments/bundles.json are exactly what the bundle step writes', () => {
-  it('four bundles, one per PI contract', () => {
-    expect(record.bundles.map((b) => b.id)).toEqual(IDS);
+  it('four FULL bundles, one per PI contract (the DU set\'s HIDDEN bundles follow them: test/dual-interfaces.test.ts)', () => {
+    expect(record.bundles.filter((b) => b.form === 'FULL').map((b) => b.id)).toEqual(IDS);
+    expect(record.bundles.slice(0, IDS.length).map((b) => b.id)).toEqual(IDS);
   });
 
   it.each(IDS)('%s: the committed bundle is byte-identical to a fresh deploy-check of the committed sources and keys', (id) => {

@@ -1,0 +1,363 @@
+// SPDX-License-Identifier: Apache-2.0 AND MIT
+//
+// GENERATED FILE — do not edit. Produced by scripts/generate-du-contracts.ts (scripts/du-interfaces.ts).
+//
+// The PUBLIC INTERFACE of SNEBDU (Shielded Nebula · DU), HIDDEN: the private form of the Public
+// Interfaces draft; form and header adapted from its MIT example compact-examples/fungible-private/Interface.compact.
+// The deployed contract is contracts/generated/SNEBDU.compact.
+//
+// WHAT IS HIDDEN, AND WHAT IS NOT
+//
+// This file imports no module. It declares the deployed contract's ledger itself: 6
+// fields, in the deployed order and with the deployed types, named hidden1 to hidden6. A
+// verifier key depends on a circuit's logic and on the positions and types of the ledger
+// slots it touches, not on any name, so the circuits below compile to the keys the
+// contract deployed.
+//
+// Published: EVERY impure circuit of SNEBDU (spec 00024 Q9), under its deployed entry point
+// name, with its code — 13 circuits: name, symbol, decimals, domainSep, tokenColor, mint, publishName, publishSymbol, publishDecimals, publishRepository, publishMetadata, publishMetadataDescription, publishBundle.
+// The module circuits they call are written out below as local circuits (each body as in
+// its module; only the ledger names differ). The emitting circuits (every MIP-0018
+// declaration and publishBundle) take the emitter secret, a witness: a consumer verifies
+// them at Levels 1-3 but cannot execute them.
+//
+// Hidden: the contract's source as written (its module structure and imports), its
+// constructor, the original ledger field names, and its pure circuit `kind()` (a constant; it
+// has no verifier key, so it cannot be verified and is not published).
+//
+// Still visible, here or on chain: the ledger's shape (6 fields, their positions and
+// types) and its values, every entry point name, every verifier key, and the witnesses the
+// published circuits take (emitterSecret).
+//
+// Code adapted from: contracts/TokenMetadata.compact (the MIP-0018 module, Apache-2.0),
+// contracts/OffChainInterface.compact (the Public Interfaces module, Apache-2.0), and
+// OpenZeppelin Compact Contracts v0.4.0-alpha.3 (MIT, (c) Zeppelin Group Ltd):
+// token/NativeShieldedToken.compact, token/NativeShieldedTokenCore.compact, utils/Utils.compact — see the bundle's NOTICE and SOURCE.md.
+
+pragma language_version >= 0.26.0;
+
+import CompactStandardLibrary;
+
+export { ContractAddress, Either, Maybe, ShieldedCoinInfo, ZswapCoinPublicKey };
+
+// The deployed ledger, slot by slot. Not exported: nothing reads it by name.
+sealed ledger hidden1: Bytes<32>;
+sealed ledger hidden2: Bytes<32>;
+ledger hidden3: Boolean;
+sealed ledger hidden4: Opaque<"string">;
+sealed ledger hidden5: Opaque<"string">;
+sealed ledger hidden6: Uint<8>;
+
+witness emitterSecret(): Bytes<32>;
+
+// --- MIP-0018 (contracts/TokenMetadata.compact, Apache-2.0): the circuits the declarations call ---
+
+circuit tm_EVENT_NAME(): Bytes<32> {
+  return pad(32, "mip-0018:token-metadata[v1]");
+}
+
+circuit tm_ONE_PART_VALUE_SIZE(): Uint<16> {
+  return 188;
+}
+
+pure circuit tm_emitterSecretHashOf(secret: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "mip-0018:emitter:"), secret]);
+}
+
+/** Every emitting circuit calls this first: the caller must know the emitter secret (spec 00024 Q12). */
+circuit tm_assertEmitter(): [] {
+  assert(tm_emitterSecretHashOf(emitterSecret()) == hidden1,
+         "TokenMetadata: caller is not the emitter");
+}
+
+circuit tm_emitHead(
+  domainSep: Bytes<32>,
+  kind: Uint<8>,
+  key: Bytes<32>,
+  valType: Uint<8>,
+  valLen: Uint<16>,
+  valueHead: Bytes<188>
+): [] {
+  emit(Misc {
+    name: tm_EVENT_NAME(),
+    payload: Bytes[...domainSep, kind, ...key, valType, ...(valLen as Bytes<2>), ...valueHead]
+  });
+}
+
+circuit tm_emitPart(part: Bytes<256>): [] {
+  emit(Misc { name: tm_EVENT_NAME(), payload: part });
+}
+
+circuit tm_emitTokenMetadata(
+  domainSep: Bytes<32>,
+  kind: Uint<8>,
+  key: Bytes<32>,
+  valType: Uint<8>,
+  valLen: Uint<16>,
+  value: Bytes<188>
+): [] {
+  assert(valLen <= tm_ONE_PART_VALUE_SIZE(),
+         "TokenMetadata: a one-part value holds at most 188 bytes");
+  tm_emitHead(domainSep, kind, key, valType, valLen, value);
+}
+
+// --- Public Interfaces (contracts/OffChainInterface.compact, Apache-2.0) ---
+
+circuit oci_publishBundle(payload: Bytes<256>): [] {
+  emit(Misc { name: pad(32, "mip-xxxx:public-interface[v1]"), payload: disclose(payload) });
+}
+
+// --- OpenZeppelin Compact Contracts v0.4.0-alpha.3 (MIT, (c) Zeppelin Group Ltd):
+// token/NativeShieldedTokenCore, token/NativeShieldedToken, utils/Utils — the circuits the
+// published token circuits call ---
+
+pure circuit oz_utils_isContractAddress(
+  keyOrAddress: Either<ZswapCoinPublicKey, ContractAddress>
+): Boolean {
+  return !keyOrAddress.is_left;
+}
+
+pure circuit oz_utils_isKeyOrAddressZero(
+  keyOrAddress: Either<ZswapCoinPublicKey, ContractAddress>
+): Boolean {
+  return oz_utils_isContractAddress(keyOrAddress)
+           ? default<ContractAddress> == keyOrAddress.right
+           : default<ZswapCoinPublicKey> == keyOrAddress.left;
+}
+
+circuit oz_core_assertInitialized(): [] {
+  assert(hidden3, "NativeShieldedToken: contract not initialized");
+}
+
+circuit oz_core_name(): Opaque<"string"> {
+  oz_core_assertInitialized();
+  return hidden4;
+}
+
+circuit oz_core_symbol(): Opaque<"string"> {
+  oz_core_assertInitialized();
+  return hidden5;
+}
+
+circuit oz_core_decimals(): Uint<8> {
+  oz_core_assertInitialized();
+  return hidden6;
+}
+
+circuit oz_core_tokenColor(domain: Bytes<32>): Bytes<32> {
+  oz_core_assertInitialized();
+  return tokenType(disclose(domain), kernel.self());
+}
+
+circuit oz_core__mint(
+  domain: Bytes<32>,
+  recipient: Either<ZswapCoinPublicKey, ContractAddress>,
+  amount: Uint<64>,
+  nonce: Bytes<32>
+): ShieldedCoinInfo {
+  oz_core_assertInitialized();
+  const self = kernel.self();
+  assert(!oz_utils_isKeyOrAddressZero(recipient), "NativeShieldedToken: invalid recipient");
+  assert(recipient.is_left || recipient.right == self, "NativeShieldedToken: recipient contract must be self");
+  const coin = mintShieldedToken(disclose(domain), disclose(amount), disclose(nonce), disclose(recipient));
+  if (disclose(!recipient.is_left)) {
+    receiveShielded(coin);
+  }
+  return coin;
+}
+
+circuit oz_nst_name(): Opaque<"string"> {
+  return oz_core_name();
+}
+
+circuit oz_nst_symbol(): Opaque<"string"> {
+  return oz_core_symbol();
+}
+
+circuit oz_nst_decimals(): Uint<8> {
+  return oz_core_decimals();
+}
+
+circuit oz_nst_tokenColor(): Bytes<32> {
+  return oz_core_tokenColor(hidden2);
+}
+
+circuit oz_nst__mint(
+  recipient: ZswapCoinPublicKey,
+  amount: Uint<64>,
+  nonce: Bytes<32>
+): ShieldedCoinInfo {
+  return oz_core__mint(
+    hidden2,
+    left<ZswapCoinPublicKey, ContractAddress>(recipient),
+    amount,
+    nonce
+  );
+}
+
+// --- the published token circuits ---
+
+export circuit name(): Opaque<"string"> {
+  return oz_nst_name();
+}
+
+export circuit symbol(): Opaque<"string"> {
+  return oz_nst_symbol();
+}
+
+export circuit decimals(): Uint<8> {
+  return oz_nst_decimals();
+}
+
+/** The domain separator this contract mints and describes under. */
+export circuit domainSep(): Bytes<32> {
+  return hidden2;
+}
+
+/** The token's colour: `tokenType(domainSep, this contract)`. */
+export circuit tokenColor(): Bytes<32> {
+  return oz_nst_tokenColor();
+}
+
+/** Mints `amount` to `recipient`, a Zswap coin public key. */
+export circuit mint(recipient: ZswapCoinPublicKey, amount: Uint<64>, nonce: Bytes<32>): ShieldedCoinInfo {
+  return oz_nst__mint(disclose(recipient), disclose(amount), disclose(nonce));
+}
+
+// --- the published MIP-0018 declarations (each ONE package; every byte a literal) ---
+
+/**
+ * @description MIP-0018 (publishMetadata): ONE declaration, one TokenMetadata event, every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit publishName(): [] {
+  tm_assertEmitter();
+  // name = "Shielded Nebula · DU" (val-type 1 string, val-len 21)
+  tm_emitTokenMetadata(pad(32, "umbra:snebdu"), 1, pad(32, "name"), 1, 21, Bytes[
+    0x53, 0x68, 0x69, 0x65, 0x6c, 0x64, 0x65, 0x64, 0x20, 0x4e, 0x65, 0x62,
+    0x75, 0x6c, 0x61, 0x20, 0xc2, 0xb7, 0x20, 0x44, 0x55, ...pad(167, "")
+  ]);
+}
+
+/**
+ * @description MIP-0018 (publishMetadata): ONE declaration, one TokenMetadata event, every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit publishSymbol(): [] {
+  tm_assertEmitter();
+  // symbol = "SNEBDU" (val-type 1 string, val-len 6)
+  tm_emitTokenMetadata(pad(32, "umbra:snebdu"), 1, pad(32, "symbol"), 1, 6, pad(188, "SNEBDU"));
+}
+
+/**
+ * @description MIP-0018 (publishMetadata): ONE declaration, one TokenMetadata event, every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit publishDecimals(): [] {
+  tm_assertEmitter();
+  // decimals = "0" (val-type 2 integer, val-len 16)
+  tm_emitTokenMetadata(pad(32, "umbra:snebdu"), 1, pad(32, "decimals"), 2, 16, pad(188, ""));
+}
+
+/**
+ * @description MIP-0018 (publishRepository): ONE declaration, one TokenMetadata event, every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit publishRepository(): [] {
+  tm_assertEmitter();
+  // repository = "https://github.com/acedward/mip-public-interfaces/blob/main/contracts/generated/SNEBDU.compact" (val-type 4 URI, val-len 94)
+  tm_emitTokenMetadata(pad(32, "umbra:snebdu"), 1, pad(32, "repository"), 4, 94, pad(188, "https://github.com/acedward/mip-public-interfaces/blob/main/contracts/generated/SNEBDU.compact"));
+}
+
+/**
+ * @description MIP-0018 (setMetadata): ONE declaration, 3 TokenMetadata events (3 parts, one intent), every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit publishMetadata(): [] {
+  tm_assertEmitter();
+  // metadata = "{\"description\":\"Shielded Nebula is a reference token of the Umbra set. Its metadata document is one complete JSON… (val-type 3 JSON, val-len 677, 3 parts)
+  tm_emitHead(pad(32, "umbra:snebdu"), 1, pad(32, "metadata"), 3, 677, Bytes[
+    0x7b, 0x22, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f,
+    0x6e, 0x22, 0x3a, 0x22, 0x53, 0x68, 0x69, 0x65, 0x6c, 0x64, 0x65, 0x64,
+    0x20, 0x4e, 0x65, 0x62, 0x75, 0x6c, 0x61, 0x20, 0x69, 0x73, 0x20, 0x61,
+    0x20, 0x72, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x20, 0x74,
+    0x6f, 0x6b, 0x65, 0x6e, 0x20, 0x6f, 0x66, 0x20, 0x74, 0x68, 0x65, 0x20,
+    0x55, 0x6d, 0x62, 0x72, 0x61, 0x20, 0x73, 0x65, 0x74, 0x2e, 0x20, 0x49,
+    0x74, 0x73, 0x20, 0x6d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x20,
+    0x64, 0x6f, 0x63, 0x75, 0x6d, 0x65, 0x6e, 0x74, 0x20, 0x69, 0x73, 0x20,
+    0x6f, 0x6e, 0x65, 0x20, 0x63, 0x6f, 0x6d, 0x70, 0x6c, 0x65, 0x74, 0x65,
+    0x20, 0x4a, 0x53, 0x4f, 0x4e, 0x20, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x20,
+    0x74, 0x68, 0x61, 0x74, 0x20, 0x69, 0x73, 0x20, 0x6c, 0x6f, 0x6e, 0x67,
+    0x65, 0x72, 0x20, 0x74, 0x68, 0x61, 0x6e, 0x20, 0x6f, 0x6e, 0x65, 0x20,
+    0x4d, 0x49, 0x50, 0x2d, 0x30, 0x30, 0x31, 0x38, 0x20, 0x65, 0x76, 0x65,
+    0x6e, 0x74, 0x20, 0x63, 0x61, 0x6e, 0x20, 0x63, 0x61, 0x72, 0x72, 0x79,
+    0x2c, 0x20, 0x73, 0x6f, 0x20, 0x69, 0x74, 0x20, 0x74, 0x72, 0x61, 0x76,
+    0x65, 0x6c, 0x73, 0x20, 0x61, 0x73, 0x20, 0x61
+  ]);
+  // part 2 of 3
+  tm_emitPart(Bytes[
+    0x20, 0x73, 0x69, 0x6e, 0x67, 0x6c, 0x65, 0x20, 0x64, 0x65, 0x63, 0x6c,
+    0x61, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x20, 0x69, 0x6e, 0x20, 0x74,
+    0x68, 0x72, 0x65, 0x65, 0x20, 0x70, 0x61, 0x72, 0x74, 0x73, 0x2c, 0x20,
+    0x65, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x64, 0x20, 0x62, 0x79, 0x20, 0x6f,
+    0x6e, 0x65, 0x20, 0x63, 0x69, 0x72, 0x63, 0x75, 0x69, 0x74, 0x20, 0x63,
+    0x61, 0x6c, 0x6c, 0x20, 0x69, 0x6e, 0x20, 0x6f, 0x6e, 0x65, 0x20, 0x67,
+    0x75, 0x61, 0x72, 0x61, 0x6e, 0x74, 0x65, 0x65, 0x64, 0x20, 0x69, 0x6e,
+    0x74, 0x65, 0x6e, 0x74, 0x20, 0x61, 0x6e, 0x64, 0x20, 0x6d, 0x65, 0x72,
+    0x67, 0x65, 0x64, 0x20, 0x62, 0x79, 0x20, 0x74, 0x68, 0x65, 0x20, 0x4d,
+    0x75, 0x6c, 0x74, 0x69, 0x2d, 0x50, 0x61, 0x72, 0x74, 0x20, 0x45, 0x76,
+    0x65, 0x6e, 0x74, 0x20, 0x72, 0x75, 0x6c, 0x65, 0x2e, 0x22, 0x2c, 0x22,
+    0x63, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x3a,
+    0x22, 0x55, 0x6d, 0x62, 0x72, 0x61, 0x20, 0x72, 0x65, 0x66, 0x65, 0x72,
+    0x65, 0x6e, 0x63, 0x65, 0x20, 0x73, 0x65, 0x74, 0x22, 0x2c, 0x22, 0x69,
+    0x6d, 0x61, 0x67, 0x65, 0x22, 0x3a, 0x22, 0x64, 0x61, 0x74, 0x61, 0x3a,
+    0x69, 0x6d, 0x61, 0x67, 0x65, 0x2f, 0x73, 0x76, 0x67, 0x2b, 0x78, 0x6d,
+    0x6c, 0x3b, 0x75, 0x74, 0x66, 0x38, 0x2c, 0x3c, 0x73, 0x76, 0x67, 0x20,
+    0x78, 0x6d, 0x6c, 0x6e, 0x73, 0x3d, 0x27, 0x68, 0x74, 0x74, 0x70, 0x3a,
+    0x2f, 0x2f, 0x77, 0x77, 0x77, 0x2e, 0x77, 0x33, 0x2e, 0x6f, 0x72, 0x67,
+    0x2f, 0x32, 0x30, 0x30, 0x30, 0x2f, 0x73, 0x76, 0x67, 0x27, 0x20, 0x76,
+    0x69, 0x65, 0x77, 0x42, 0x6f, 0x78, 0x3d, 0x27, 0x30, 0x20, 0x30, 0x20,
+    0x38, 0x20, 0x38, 0x27
+  ]);
+  // part 3 of 3
+  tm_emitPart(Bytes[
+    0x3e, 0x3c, 0x63, 0x69, 0x72, 0x63, 0x6c, 0x65, 0x20, 0x63, 0x78, 0x3d,
+    0x27, 0x34, 0x27, 0x20, 0x63, 0x79, 0x3d, 0x27, 0x34, 0x27, 0x20, 0x72,
+    0x3d, 0x27, 0x33, 0x27, 0x20, 0x66, 0x69, 0x6c, 0x6c, 0x3d, 0x27, 0x25,
+    0x32, 0x33, 0x61, 0x33, 0x66, 0x27, 0x2f, 0x3e, 0x3c, 0x2f, 0x73, 0x76,
+    0x67, 0x3e, 0x22, 0x2c, 0x22, 0x61, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75,
+    0x74, 0x65, 0x73, 0x22, 0x3a, 0x5b, 0x7b, 0x22, 0x74, 0x72, 0x61, 0x69,
+    0x74, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x22, 0x3a, 0x22, 0x6c, 0x61, 0x79,
+    0x6f, 0x75, 0x74, 0x22, 0x2c, 0x22, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x22,
+    0x3a, 0x22, 0x55, 0x43, 0x2d, 0x31, 0x3a, 0x20, 0x32, 0x2d, 0x62, 0x79,
+    0x74, 0x65, 0x20, 0x6c, 0x69, 0x74, 0x74, 0x6c, 0x65, 0x2d, 0x65, 0x6e,
+    0x64, 0x69, 0x61, 0x6e, 0x20, 0x76, 0x61, 0x6c, 0x2d, 0x6c, 0x65, 0x6e,
+    0x22, 0x7d, 0x2c, 0x7b, 0x22, 0x74, 0x72, 0x61, 0x69, 0x74, 0x5f, 0x74,
+    0x79, 0x70, 0x65, 0x22, 0x3a, 0x22, 0x70, 0x61, 0x72, 0x74, 0x73, 0x22,
+    0x2c, 0x22, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x22, 0x3a, 0x33, 0x7d, 0x2c,
+    0x7b, 0x22, 0x74, 0x72, 0x61, 0x69, 0x74, 0x5f, 0x74, 0x79, 0x70, 0x65,
+    0x22, 0x3a, 0x22, 0x73, 0x74, 0x61, 0x6e, 0x64, 0x61, 0x72, 0x64, 0x22,
+    0x2c, 0x22, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x22, 0x3a, 0x22, 0x6d, 0x69,
+    0x70, 0x2d, 0x30, 0x30, 0x31, 0x38, 0x3a, 0x74, 0x6f, 0x6b, 0x65, 0x6e,
+    0x2d, 0x6d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x5b, 0x76, 0x31,
+    0x5d, 0x22, 0x7d, 0x5d, 0x7d, ...pad(23, "")
+  ]);
+}
+
+/**
+ * @description MIP-0018 (setMetadata): ONE declaration, one TokenMetadata event, every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit publishMetadataDescription(): [] {
+  tm_assertEmitter();
+  // /metadata/description = "A pointer key is just a key: no assembly, no nesting." (val-type 1 string, val-len 53)
+  tm_emitTokenMetadata(pad(32, "umbra:snebdu"), 1, pad(32, "/metadata/description"), 1, 53, pad(188, "A pointer key is just a key: no assembly, no nesting."));
+}
+
+// --- the published Public Interfaces circuit ---
+
+/** Emits ONE 256-byte part of this contract's interface pointer (`mip-xxxx:public-interface[v1]`). Emitter only. */
+export circuit publishBundle(payload: Bytes<256>): [] {
+  tm_assertEmitter();
+  oci_publishBundle(payload);
+}

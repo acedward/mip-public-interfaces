@@ -1,0 +1,203 @@
+// SPDX-License-Identifier: Apache-2.0
+//
+// GENERATED FILE — do not edit. Produced by scripts/generate-du-contracts.ts from
+// deployments/reference-set.json row "LMOON" and deployments/dual-set.json,
+// DU (dual) variant: LMOONDU (Ledger Moon · DU). Source of truth for its `repository` declaration:
+// https://github.com/acedward/mip-public-interfaces/blob/main/contracts/generated/LMOONDU.compact
+//
+// Ledger Moon · DU (LMOONDU), 8 decimals, kind byte 2; built on OpenZeppelin Compact
+// Contracts v0.4.0-alpha.3 `FungibleToken` (vendored, contracts/vendor/openzeppelin/).
+// Covers: a rename, a Null that clears `description`, then a ~400-byte `description` in 2
+// parts (positioned by its first part, P1), beside a HIDDEN interface (OpenZeppelin
+// FungibleToken).
+//
+// DUAL. MIP-0018: the full metadata of its MIP-18 twin LMOON18 (acedward/mip-0018-midnight-contracts),
+// step for step — one declaration per circuit call (one intent, one package), every byte a
+// compile-time literal, a value longer than 188 bytes emitted as all of its parts by one call.
+// PUBLIC INTERFACE: HIDDEN — the published interface is contracts/interfaces/LMOONDU.Interface.compact
+// (the Public Interfaces draft's private form: this contract's ledger declared slot by slot
+// under hidden names, no module imported, the code of every impure circuit). The pure
+// constant getter below is not published (a pure circuit has no verifier key on chain).
+//
+// Who may emit: only the holder of the secret whose hash the constructor stores (spec 00024
+// Q12) — every declaration circuit and publishBundle check it first.
+//
+// Constructor arguments: `emitterSecretHash` (`TM_emitterSecretHashOf(secret)`, computed off chain), `name_`, `symbol_`.
+// Circuits the deployment calls, in order:
+//   publishName (name, 1 event)
+//   publishSymbol (symbol, 1 event)
+//   publishDecimals (decimals, 1 event)
+//   publishRepository (repository, 1 event)
+//   mint
+//   publishName2 (name, 1 event)
+//   publishDescription (description, 1 event)
+//   clearDescription (description, 1 event)
+//   publishDescription2 (description, 2 events)
+//   publishBundle (1 part, one guaranteed intent)
+
+pragma language_version >= 0.26.0;
+
+import CompactStandardLibrary;
+import "../TokenMetadata" prefix TM_;
+import "../OffChainInterface" prefix OCI_;
+import "../vendor/openzeppelin/token/FungibleToken" prefix Token_;
+
+export { ContractAddress, Either, Maybe, TM_emitterSecretHash };
+
+/**
+ * @param {Bytes<32>} emitterSecretHash - `TM_emitterSecretHashOf(secret)`, computed off chain;
+ *   every emitting circuit proves knowledge of `secret` through the `emitterSecret` witness.
+ * @param {Opaque<"string">} name_ - The token's name (a Compact string literal is not an Opaque<"string">).
+ * @param {Opaque<"string">} symbol_ - The token's symbol.
+ */
+constructor(emitterSecretHash: Bytes<32>, name_: Opaque<"string">, symbol_: Opaque<"string">) {
+  TM_initializeEmitter(emitterSecretHash);
+  Token_initialize(name_, symbol_, 8);
+}
+
+export circuit name(): Opaque<"string"> {
+  return Token_name();
+}
+
+export circuit symbol(): Opaque<"string"> {
+  return Token_symbol();
+}
+
+export circuit decimals(): Uint<8> {
+  return Token_decimals();
+}
+
+/**
+ * The kind byte this contract declares (MIP section 3). PURE: a constant, no verifier key on
+ * chain — so the HIDDEN interface does not publish it (spec Q9).
+ */
+export circuit kind(): Uint<8> {
+  return 2;
+}
+
+export circuit totalSupply(): Uint<128> {
+  return Token_totalSupply();
+}
+
+export circuit balanceOf(account: Either<Bytes<32>, ContractAddress>): Uint<128> {
+  return Token_balanceOf(account);
+}
+
+/**
+ * @description Moves `value` from the caller's account (derived from the
+ * `wit_FungibleTokenSK` witness) to `to`. Takes a witness, so a consumer verifies it
+ * but cannot execute it.
+ */
+export circuit transfer(to: Either<Bytes<32>, ContractAddress>, value: Uint<128>): Boolean {
+  return Token_transfer(disclose(to), disclose(value));
+}
+
+/**
+ * @description Credits `value` to `account` in contract state (a ledger token: no protocol
+ * mint, no colour). Deliberately open: a reference test token.
+ */
+export circuit mint(account: Either<Bytes<32>, ContractAddress>, value: Uint<128>): [] {
+  Token__mint(disclose(account), disclose(value));
+}
+
+/**
+ * @description MIP-0018 (publishMetadata): ONE declaration, one TokenMetadata event, every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit publishName(): [] {
+  TM_assertEmitter();
+  // name = "Ledger Moon · DU" (val-type 1 string, val-len 17)
+  TM_emitTokenMetadata(pad(32, "umbra:lmoondu"), 2, pad(32, "name"), 1, 17, Bytes[
+    0x4c, 0x65, 0x64, 0x67, 0x65, 0x72, 0x20, 0x4d, 0x6f, 0x6f, 0x6e, 0x20,
+    0xc2, 0xb7, 0x20, 0x44, 0x55, ...pad(171, "")
+  ]);
+}
+
+/**
+ * @description MIP-0018 (publishMetadata): ONE declaration, one TokenMetadata event, every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit publishSymbol(): [] {
+  TM_assertEmitter();
+  // symbol = "LMOONDU" (val-type 1 string, val-len 7)
+  TM_emitTokenMetadata(pad(32, "umbra:lmoondu"), 2, pad(32, "symbol"), 1, 7, pad(188, "LMOONDU"));
+}
+
+/**
+ * @description MIP-0018 (publishMetadata): ONE declaration, one TokenMetadata event, every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit publishDecimals(): [] {
+  TM_assertEmitter();
+  // decimals = "8" (val-type 2 integer, val-len 16)
+  TM_emitTokenMetadata(pad(32, "umbra:lmoondu"), 2, pad(32, "decimals"), 2, 16, Bytes[0x08, ...pad(187, "")]);
+}
+
+/**
+ * @description MIP-0018 (publishRepository): ONE declaration, one TokenMetadata event, every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit publishRepository(): [] {
+  TM_assertEmitter();
+  // repository = "https://github.com/acedward/mip-public-interfaces/blob/main/contracts/generated/LMOONDU.compact" (val-type 4 URI, val-len 95)
+  TM_emitTokenMetadata(pad(32, "umbra:lmoondu"), 2, pad(32, "repository"), 4, 95, pad(188, "https://github.com/acedward/mip-public-interfaces/blob/main/contracts/generated/LMOONDU.compact"));
+}
+
+/**
+ * @description MIP-0018 (setMetadata): ONE declaration, one TokenMetadata event, every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit publishName2(): [] {
+  TM_assertEmitter();
+  // name = "Ledger Moon · DU (renamed)" (val-type 1 string, val-len 27)
+  TM_emitTokenMetadata(pad(32, "umbra:lmoondu"), 2, pad(32, "name"), 1, 27, Bytes[
+    0x4c, 0x65, 0x64, 0x67, 0x65, 0x72, 0x20, 0x4d, 0x6f, 0x6f, 0x6e, 0x20,
+    0xc2, 0xb7, 0x20, 0x44, 0x55, 0x20, 0x28, 0x72, 0x65, 0x6e, 0x61, 0x6d,
+    0x65, 0x64, 0x29, ...pad(161, "")
+  ]);
+}
+
+/**
+ * @description MIP-0018 (setMetadata): ONE declaration, one TokenMetadata event, every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit publishDescription(): [] {
+  TM_assertEmitter();
+  // description = "A ledger token that renamed itself in a later block." (val-type 1 string, val-len 52)
+  TM_emitTokenMetadata(pad(32, "umbra:lmoondu"), 2, pad(32, "description"), 1, 52, pad(188, "A ledger token that renamed itself in a later block."));
+}
+
+/**
+ * @description MIP-0018 (setMetadata): ONE declaration, one TokenMetadata event, every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit clearDescription(): [] {
+  TM_assertEmitter();
+  // description = Null — the current value is cleared, the history is not (val-type 5 Null, val-len 0)
+  TM_emitTokenMetadata(pad(32, "umbra:lmoondu"), 2, pad(32, "description"), 5, 0, pad(188, ""));
+}
+
+/**
+ * @description MIP-0018 (setMetadata): ONE declaration, 2 TokenMetadata events (2 parts, one intent), every byte a
+ * compile-time literal. Emitter only.
+ */
+export circuit publishDescription2(): [] {
+  TM_assertEmitter();
+  // description = "Ledger Moon cleared its description with a Null declaration and then declared this one: a value longer than one even… (val-type 1 string, val-len 377, 2 parts)
+  TM_emitHead(pad(32, "umbra:lmoondu"), 2, pad(32, "description"), 1, 377, pad(188, "Ledger Moon cleared its description with a Null declaration and then declared this one: a value longer than one event can hold, published as a single MIP-0018 declaration in two parts from"));
+  // part 2 of 2
+  TM_emitPart(pad(256, " one circuit call. The indexer positions the package by its first part, so this description is the current value and the cleared one stays in the history. Nothing in these bytes is framing."));
+}
+
+/**
+ * @description Public Interfaces: emits ONE part of this contract's interface pointer —
+ * the `Misc` event `mip-xxxx:public-interface[v1]` whose payload is a 256-byte part of
+ * `commitment ++ utf8(index.json URL)`, zero padded to 256·k bytes. A pointer of k > 1
+ * parts is k calls in ONE guaranteed intent, in order (the Multi-Part Event rule). The
+ * circuit writes no ledger state, so every part runs from the same state. Emitter only.
+ * @param {Bytes<256>} payload - One 256-byte part of the pointer.
+ */
+export circuit publishBundle(payload: Bytes<256>): [] {
+  TM_assertEmitter();
+  OCI_publishBundle(payload);
+}
